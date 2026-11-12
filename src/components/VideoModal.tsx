@@ -125,6 +125,10 @@ export default function VideoModal({
               controls
               autoPlay
               playsInline
+              onLoadedMetadata={(e) => {
+                e.currentTarget.muted = false;
+                e.currentTarget.volume = 1;
+              }}
               onTimeUpdate={(e) => {
                 const v = e.currentTarget;
                 if (v.duration > 0) {

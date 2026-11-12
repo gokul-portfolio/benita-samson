@@ -78,7 +78,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
       <Particles count={36} />
 
       <motion.p
-        className="relative mb-6 text-[11px] font-bold uppercase tracking-[0.5em] text-crimson-2"
+        className="relative mb-6 text-[10px] font-bold uppercase tracking-[0.26em] text-crimson-2 sm:text-[11px] sm:tracking-[0.5em]"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -103,7 +103,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
           stagger={0.07}
           className="font-sans text-2xl font-semibold tracking-[0.2em] text-bone sm:text-3xl"
         />
-        <p className="mt-2 text-xs font-semibold tracking-[0.35em] text-mist sm:text-sm">{profile.role.toUpperCase()}</p>
+        <p className="mt-2 text-[11px] font-semibold tracking-[0.18em] text-mist sm:text-sm sm:tracking-[0.35em]">{profile.role.toUpperCase()}</p>
         <p className="mt-5 text-sm leading-relaxed text-bone/75 sm:text-base">
           A celebration of a woman who dared to dream beyond the familiar, found the courage to begin again, and continues to build with purpose. The journey continues.
         </p>

@@ -20,11 +20,11 @@ function Intro() {
   return (
     <div className="flex w-full shrink-0 flex-col justify-center lg:w-[34vw]">
       <p className="mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-crimson-2">
-        <span className="h-px w-8 bg-crimson-2" /> {projects.length} Flagship Pillars · From Vision to Impact
+        <span className="h-px w-8 bg-crimson-2" /> {projects.length} Ecosystem Ventures · Connecting Dots Worldwide
       </p>
       <RevealText as="h2" text="THE VENTURES" className="font-display text-[clamp(3.5rem,9vw,8rem)] leading-[0.85] text-bone" />
       <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-mist">
-        Career HQ, Career with Beni, and Connecting Dots Worldwide — explore the ventures, milestones, and upcoming initiatives.
+        Connecting Dots Worldwide is the parent company identity connecting education, industry, knowledge, digital learning, media and social impact.
       </p>
       <p className="mt-6 hidden text-xs tracking-[0.24em] text-smoke lg:block">SCROLL TO BROWSE →</p>
     </div>
@@ -76,8 +76,8 @@ function PinnedOriginals({ onOpen }: { onOpen: (p: Project) => void }) {
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <div ref={wrap} style={{ height: `calc(100vh + ${dist}px)` }} className="relative">
-      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
+    <div ref={wrap} style={{ height: `calc(74vh + ${dist}px)` }} className="relative">
+      <div className="sticky top-16 flex h-[74vh] min-h-[520px] max-h-[620px] flex-col justify-center overflow-hidden">
         <SectionGridBackdrop
           color="#ff3d5a"
           cellSize={54}
@@ -93,8 +93,8 @@ function PinnedOriginals({ onOpen }: { onOpen: (p: Project) => void }) {
           ))}
           <Outro />
         </motion.div>
-        <div className="gutter absolute inset-x-0 bottom-8 z-10 flex items-center gap-4">
-          <span className="text-[10px] font-bold tracking-[0.3em] text-smoke">ORIGINALS</span>
+        <div className="gutter absolute inset-x-0 bottom-5 z-10 flex items-center gap-4">
+          <span className="text-[10px] font-bold tracking-[0.3em] text-smoke">CONNECTING DOTS ECOSYSTEM</span>
           <div className="h-[2px] flex-1 overflow-hidden rounded bg-white/10">
             <motion.div className="h-full origin-left bg-crimson" style={{ scaleX: bar }} />
           </div>

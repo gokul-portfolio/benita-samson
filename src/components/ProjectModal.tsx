@@ -4,6 +4,7 @@ import { projects, type Project } from '../data/portfolio';
 import { useScrollLock } from '../hooks/smoothScroll';
 import { EASE, Magnetic } from './fx';
 import { ProjectArt } from './Poster';
+import VentureLogo from './ui/VentureLogo';
 
 const block = {
   hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
@@ -66,9 +67,12 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
               ✕
             </button>
             <div className="absolute inset-x-0 bottom-0 px-5 pb-6 sm:px-10">
-              <motion.p className="mb-2 flex items-center gap-2 text-[11px] font-bold tracking-[0.34em] text-bone/80" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-                <span className="font-display text-xl tracking-normal text-crimson-2">B</span> CONNECTING DOTS
-              </motion.p>
+              <motion.div className="mb-3 flex flex-wrap items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+                <VentureLogo project={project} size="modal" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-bone/75">
+                  Connecting Dots Worldwide
+                </span>
+              </motion.div>
               <motion.h2
                 id={`title-${project.id}-modal`}
                 layoutId={`title-${project.id}`}

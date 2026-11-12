@@ -1,13 +1,13 @@
 import { useLayoutEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { education, experience, profile } from '../data/portfolio';
-import { EASE, SectionHeading, Tilt } from './fx';
+import { SectionHeading } from './fx';
 import { GSAP_EASE, gsap } from '../lib/gsap';
 import GsapSplitText from './ui/GsapSplitText';
+import GazePortrait from './ui/GazePortrait';
 import ParallaxLayer from './ui/ParallaxLayer';
 
 export default function About() {
-  const rightColRef = useRef<HTMLDivElement>(null);
+  const sectionBodyRef = useRef<HTMLDivElement>(null);
   const facts = [
     { k: 'Australian Banking', v: `${education[0].score} · NAB & CBA`, s: 'Walked away to build her own path' },
     { k: 'Madurai Launch', v: experience[2].company, s: 'Feb 2025 · Founding team of 4' },
@@ -16,43 +16,84 @@ export default function About() {
   ];
 
   useLayoutEffect(() => {
-    const el = rightColRef.current;
+    const el = sectionBodyRef.current;
     if (!el) return;
 
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
       mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const aura = el.querySelector<HTMLElement>('[data-about-aura]');
+        const portrait = el.querySelector<HTMLElement>('[data-about-portrait]');
+        const author = el.querySelector<HTMLElement>('[data-about-author]');
+        const shimmer = el.querySelector<HTMLElement>('[data-about-grid-shimmer]');
         const factCards = el.querySelectorAll<HTMLElement>('[data-about-fact]');
+        const pillarsLabel = el.querySelector<HTMLElement>('[data-about-pillars-label]');
         const interestPills = el.querySelectorAll<HTMLElement>('[data-about-interest]');
 
+        const tl = gsap.timeline({
+          scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+        });
+
+        if (aura) {
+          tl.fromTo(
+            aura,
+            { scale: 0.72, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.9, ease: GSAP_EASE },
+            0.12,
+          );
+        }
+
+        if (portrait) {
+          tl.fromTo(
+            portrait,
+            { y: 26, scale: 0.96, opacity: 0 },
+            { y: 0, scale: 1, opacity: 1, duration: 0.85, ease: GSAP_EASE },
+            0.18,
+          );
+        }
+
+        if (author) {
+          tl.fromTo(
+            author,
+            { y: 10, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.55, ease: GSAP_EASE },
+            0.42,
+          );
+        }
+
+        if (shimmer) {
+          tl.fromTo(
+            shimmer,
+            { scaleX: 0, opacity: 0.85, transformOrigin: 'left center' },
+            { scaleX: 1, opacity: 0, duration: 0.85, ease: GSAP_EASE },
+            0.46,
+          );
+        }
+
         if (factCards.length) {
-          gsap.fromTo(
+          tl.fromTo(
             factCards,
-            { y: 24, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.7,
-              stagger: 0.08,
-              ease: GSAP_EASE,
-              scrollTrigger: { trigger: factCards[0], start: 'top 88%', once: true },
-            },
+            { y: 22, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.65, stagger: 0.09, ease: GSAP_EASE },
+            0.46,
+          );
+        }
+
+        if (pillarsLabel) {
+          tl.fromTo(
+            pillarsLabel,
+            { y: 8, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.45, ease: GSAP_EASE },
+            0.68,
           );
         }
 
         if (interestPills.length) {
-          gsap.fromTo(
+          tl.fromTo(
             interestPills,
-            { y: 14, opacity: 0, scale: 0.94 },
-            {
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              duration: 0.55,
-              stagger: 0.045,
-              ease: GSAP_EASE,
-              scrollTrigger: { trigger: interestPills[0], start: 'top 92%', once: true },
-            },
+            { y: 12, opacity: 0, scale: 0.92 },
+            { y: 0, opacity: 1, scale: 1, duration: 0.5, stagger: 0.06, ease: GSAP_EASE },
+            0.74,
           );
         }
       });
@@ -66,61 +107,66 @@ export default function About() {
 
   return (
     <>
-      <SectionHeading kicker="The Woman Beyond the Vision" title="Founder Introduction" />
-      <div className="gutter grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
-        <ParallaxLayer yPercent={[-6, 6]} desktopOnly className="mx-auto w-full max-w-md lg:max-w-none">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.88, filter: 'blur(12px)' }}
-            whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            viewport={{ once: true, margin: '-10% 0px' }}
-            transition={{ duration: 1.2, ease: EASE }}
-          >
-        <Tilt max={5} className="rounded-2xl">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl ring-1 ring-white/10">
-            <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_30%,#5a0b1b,#14060a_60%,#07070a)]" />
-            <div className="absolute inset-0 opacity-50 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03)_0px,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_28px)]" />
-            <img
-              src={profile.portrait.src}
-              alt={profile.portrait.alt}
-              loading="lazy"
-              className="absolute bottom-0 left-1/2 h-[92%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
+      <SectionHeading kicker="The Woman Beyond the Vision" title="Founder Introduction" showRule />
+      <div
+        ref={sectionBodyRef}
+        className="gutter grid items-center gap-8 lg:grid-cols-[minmax(0,4.6fr)_minmax(0,6.4fr)] lg:items-center lg:gap-12"
+      >
+        <ParallaxLayer yPercent={[-4, 4]} desktopOnly className="mx-auto w-full max-w-[340px] sm:max-w-[390px] lg:max-w-[430px]">
+          <div data-about-portrait className="relative aspect-[4/4.2] w-full overflow-visible">
+            {/* Soft radial crimson studio aura without any hard box or border */}
+            <div
+              data-about-aura
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 bg-[radial-gradient(62%_56%_at_50%_46%,rgba(140,14,38,0.42),rgba(42,6,14,0.16)_58%,transparent_80%)]"
             />
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/90 to-transparent" />
-            <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] font-bold tracking-[0.3em] text-crimson-2">FOUNDER &amp; CEO</p>
-                <p className="font-display text-3xl leading-none text-bone">{profile.displayName}</p>
-              </div>
-              <span className="rounded border border-white/30 px-1.5 text-[10px] font-bold text-bone">VISION → IMPACT</span>
-            </div>
+            <GazePortrait sources={profile.portraitGaze} alt={profile.portrait.alt} />
+            {/* Soft bottom fade blending the cutout seamlessly into the dark canvas */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink via-ink/65 to-transparent"
+            />
           </div>
-        </Tilt>
-          </motion.div>
         </ParallaxLayer>
 
-        <div ref={rightColRef}>
+        <div>
           <GsapSplitText
             as="p"
             text={`“${profile.quote}”`}
             mode="reveal"
-            stagger={0.03}
-            duration={0.85}
-            className="font-serif text-[clamp(1.6rem,3.2vw,2.6rem)] italic leading-[1.15] text-bone"
+            delay={0.34}
+            stagger={0.025}
+            duration={0.8}
+            className="font-serif text-[clamp(1.35rem,2.4vw,2.05rem)] italic leading-[1.18] text-bone"
           />
-          <p className="mt-4 text-sm text-mist">— {profile.fullName}, Founder &amp; CEO</p>
+          <p data-about-author className="mt-3 text-xs text-mist sm:text-sm">
+            — {profile.fullName}, Founder &amp; CEO
+          </p>
 
-          <dl className="mt-10 grid gap-px overflow-hidden rounded-xl bg-white/10 sm:grid-cols-2">
-            {facts.map((f) => (
-              <div key={f.k} data-about-fact className="bg-ink-2 p-5">
-                <dt className="text-[10px] font-bold uppercase tracking-[0.28em] text-smoke">{f.k}</dt>
-                <dd className="mt-2 text-base font-semibold text-bone">{f.v}</dd>
-                <dd className="mt-0.5 text-xs text-mist">{f.s}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className="relative mt-6 overflow-hidden rounded-xl">
+            <div
+              data-about-grid-shimmer
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-crimson via-crimson-2 to-transparent"
+            />
+            <dl className="grid gap-px bg-white/10 sm:grid-cols-2">
+              {facts.map((f) => (
+                <div key={f.k} data-about-fact className="bg-ink-2 p-4">
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.26em] text-smoke">{f.k}</dt>
+                  <dd className="mt-1.5 text-sm font-semibold text-bone sm:text-base">{f.v}</dd>
+                  <dd className="mt-0.5 text-xs text-mist">{f.s}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
 
-          <div className="mt-8">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-smoke">Ecosystem Pillars</p>
+          <div className="mt-6">
+            <p
+              data-about-pillars-label
+              className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-smoke"
+            >
+              Ecosystem Pillars
+            </p>
             <div className="flex flex-wrap gap-2">
               {profile.interests.map((i) => (
                 <span key={i} data-about-interest className="glass rounded-full px-3 py-1.5 text-xs font-medium text-bone">

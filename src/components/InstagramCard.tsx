@@ -122,7 +122,7 @@ export default function InstagramCard() {
       id="instagram"
       ref={sectionRef}
       aria-label="On Instagram — @careerwithbeni"
-      className="relative isolate overflow-hidden bg-ink py-20 sm:py-28"
+      className="relative isolate overflow-hidden bg-ink py-10 sm:py-14"
     >
       {/* Interactive WebGL2 RippleGrid Backdrop tuned to site crimson-ink palette */}
       <SectionGridBackdrop
@@ -181,11 +181,11 @@ export default function InstagramCard() {
               />
               <div data-insta-portrait className="absolute inset-0 z-[1] will-change-transform">
                 <img
-                  src="/assets/benita-insta-portrait.jpg"
+                  src="/assets/images/DSC03858.jpg"
                   alt="Benita Samson (@careerwithbeni)"
                   loading="lazy"
                   decoding="async"
-                  className="h-full w-full object-cover object-[center_18%] transition-transform duration-700 hover:scale-[1.03]"
+                  className="h-full w-full object-cover object-[center_36%] transition-transform duration-700 hover:scale-[1.03]"
                 />
               </div>
               <div

@@ -81,7 +81,17 @@ export function RevealText({ text, className = '', delay = 0, as = 'span' }: { t
 }
 
 /** Small kicker + big title used at the top of every section with GSAP line-draw reveal. */
-export function SectionHeading({ kicker, title, aside }: { kicker: string; title: string; aside?: ReactNode }) {
+export function SectionHeading({
+  kicker,
+  title,
+  aside,
+  showRule = false,
+}: {
+  kicker: string;
+  title: string;
+  aside?: ReactNode;
+  showRule?: boolean;
+}) {
   const kickerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -93,29 +103,45 @@ export function SectionHeading({ kicker, title, aside }: { kicker: string; title
       mm.add('(prefers-reduced-motion: no-preference)', () => {
         const line = el.querySelector<HTMLElement>('[data-kicker-line]');
         const label = el.querySelector<HTMLElement>('[data-kicker-label]');
+        const rule = el.querySelector<HTMLElement>('[data-kicker-rule]');
+
         if (line) {
           gsap.fromTo(
             line,
-            { scaleX: 0, transformOrigin: 'left center' },
+            { scaleX: 0, opacity: 0.4, transformOrigin: 'left center' },
             {
               scaleX: 1,
-              duration: 0.75,
+              opacity: 1,
+              duration: 0.65,
               ease: GSAP_EASE,
-              scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+              scrollTrigger: { trigger: el, start: 'top 82%', once: true },
             },
           );
         }
         if (label) {
           gsap.fromTo(
             label,
-            { opacity: 0, x: -14 },
+            { opacity: 0, x: -16 },
             {
               opacity: 1,
               x: 0,
-              duration: 0.7,
-              delay: 0.1,
+              duration: 0.65,
+              delay: 0.14,
               ease: GSAP_EASE,
-              scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+              scrollTrigger: { trigger: el, start: 'top 82%', once: true },
+            },
+          );
+        }
+        if (rule) {
+          gsap.fromTo(
+            rule,
+            { scaleX: 0, transformOrigin: 'left center' },
+            {
+              scaleX: 1,
+              duration: 0.85,
+              delay: 0.34,
+              ease: GSAP_EASE,
+              scrollTrigger: { trigger: el, start: 'top 82%', once: true },
             },
           );
         }
@@ -126,19 +152,31 @@ export function SectionHeading({ kicker, title, aside }: { kicker: string; title
       ctx.revert();
       mm.revert();
     };
-  }, [kicker]);
+  }, [kicker, showRule]);
 
   return (
-    <div className="gutter mb-6 flex flex-wrap items-end justify-between gap-4 md:mb-9">
-      <div>
-        <div
-          ref={kickerRef}
-          className="mb-2 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-crimson-2"
-        >
-          <span data-kicker-line className="h-px w-8 bg-crimson-2 will-change-transform" />
+    <div ref={kickerRef} className="gutter mb-6 flex flex-wrap items-end justify-between gap-4 md:mb-9">
+      <div className="w-full max-w-2xl">
+        <div className="mb-2.5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-crimson-2">
+          <span
+            data-kicker-line
+            className="h-[2px] w-10 bg-gradient-to-r from-crimson via-crimson-2 to-white/75 will-change-transform sm:w-12"
+          />
           <span data-kicker-label>{kicker}</span>
         </div>
-        <RevealText as="h2" text={title} className="font-display text-[clamp(2.4rem,6vw,5rem)] leading-[0.9] tracking-wide text-bone" />
+        <RevealText
+          as="h2"
+          text={title}
+          delay={0.24}
+          className="font-display text-[clamp(2.4rem,6vw,5rem)] leading-[0.9] tracking-wide text-bone"
+        />
+        {showRule && (
+          <div
+            data-kicker-rule
+            aria-hidden
+            className="mt-3 h-px w-full max-w-sm bg-gradient-to-r from-crimson-2/55 via-white/15 to-transparent will-change-transform"
+          />
+        )}
       </div>
       {aside}
     </div>

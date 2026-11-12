@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { viewerProfiles, type ProfileId, type Project, type SectionId, type VideoReel } from './data/portfolio';
 import { SmoothScrollProvider, useSmoothScroll } from './hooks/smoothScroll';
@@ -19,6 +19,7 @@ import Achievements from './components/Achievements';
 import ResumeSection from './components/ResumeViewer';
 import InstagramCard from './components/InstagramCard';
 import FinalCTA from './components/FinalCTA';
+import BackToTop from './components/ui/BackToTop';
 import { EASE } from './components/fx';
 import { refreshScrollTriggersSoon } from './lib/gsap';
 
@@ -27,6 +28,7 @@ const PlayIntro = lazy(() => import('./components/PlayIntro'));
 const ProjectModal = lazy(() => import('./components/ProjectModal'));
 const ResumeModal = lazy(() => import('./components/ResumeModal'));
 const VideoModal = lazy(() => import('./components/VideoModal'));
+const EnquiryModal = lazy(() => import('./components/EnquiryModal'));
 
 type Stage = 'opening' | 'home';
 
@@ -57,6 +59,9 @@ function Series() {
   const [project, setProject] = useState<Project | null>(null);
   const [resumeOpen, setResumeOpen] = useState(false);
   const [activeReel, setActiveReel] = useState<VideoReel | null>(null);
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const hasAutoOpenedRef = useRef(false);
   const [reelProgress, setReelProgress] = useState<Record<string, number>>({});
   const [toast, setToast] = useState<string | null>(null);
   const { scrollTo, lock, unlock } = useSmoothScroll();
@@ -114,6 +119,49 @@ function Series() {
     });
   }, []);
   const closeReel = useCallback(() => setActiveReel(null), []);
+  const closeEnquiry = useCallback(() => setEnquiryOpen(false), []);
+
+  useEffect(() => {
+    if (stage !== 'home' || hasAutoOpenedRef.current) return;
+
+    const triggerOnce = () => {
+      if (hasAutoOpenedRef.current || playing || project || resumeOpen || activeReel) return;
+      if (window.scrollY < 400) return;
+      hasAutoOpenedRef.current = true;
+      setEnquiryOpen(true);
+    };
+
+    const el = bottomSentinelRef.current;
+    const io = el
+      ? new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              triggerOnce();
+              io.disconnect();
+            }
+          },
+          { rootMargin: '0px', threshold: 0.1 },
+        )
+      : null;
+
+    if (io && el) io.observe(el);
+
+    const onScroll = () => {
+      const doc = document.documentElement;
+      if (doc.scrollHeight <= window.innerHeight + 400) return;
+      if (window.scrollY + window.innerHeight >= doc.scrollHeight - 30) {
+        triggerOnce();
+        window.removeEventListener('scroll', onScroll);
+        io?.disconnect();
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      io?.disconnect();
+    };
+  }, [stage, playing, project, resumeOpen, activeReel]);
 
   const sections: Record<SectionId, ReactNode> = {
     about: <About />,
@@ -143,26 +191,47 @@ function Series() {
       </AnimatePresence>
 
       {stage === 'home' && (
-        <motion.div
-          initial={{ opacity: 0, scale: 1.03, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
-          transition={{ duration: 1, ease: EASE }}
-        >
-          <Navbar order={order} profileId={profileId} onSwitch={pickProfile} />
-          <main>
-            <Hero key={`hero-${profileId}`} onPlay={() => setPlaying(true)} onResume={() => setResumeOpen(true)} profileId={profileId} />
-            <ContinueWatching onSelect={openReel} progressMap={reelProgress} paused={Boolean(activeReel)} />
-            <PerspectiveTunnelHero onSelect={openReel} />
-            <ProjectDeck onOpenProject={setProject} />
-            {order.map((id) => (
-              <Scene key={id} id={id} className={id === 'originals' ? '!py-0 sm:!py-0' : ''}>
-                {sections[id]}
-              </Scene>
-            ))}
-            <InstagramCard />
-            <FinalCTA onReplay={() => setStage('opening')} />
-          </main>
-        </motion.div>
+        <>
+          <Navbar order={order} profileId={profileId} onSwitch={pickProfile} onEnquire={() => setEnquiryOpen(true)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 1.03, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
+            transition={{ duration: 1, ease: EASE }}
+          >
+            <main>
+              <Hero
+                key={`hero-${profileId}`}
+                onPlay={() => setPlaying(true)}
+                onResume={() => setResumeOpen(true)}
+                profileId={profileId}
+                pauseAudio={playing || Boolean(activeReel)}
+              />
+              <ContinueWatching onSelect={openReel} progressMap={reelProgress} paused={Boolean(activeReel)} />
+              <PerspectiveTunnelHero onSelect={openReel} />
+              <ProjectDeck onOpenProject={setProject} />
+              {order.map((id) => (
+                <Fragment key={id}>
+                  {id === 'story' && <InstagramCard />}
+                  <Scene
+                    id={id}
+                    className={
+                      id === 'originals'
+                        ? '!py-0 sm:!py-0'
+                        : id === 'about'
+                          ? '!py-10 sm:!py-14'
+                          : ''
+                    }
+                  >
+                    {sections[id]}
+                  </Scene>
+                </Fragment>
+              ))}
+              <FinalCTA onReplay={() => setStage('opening')} />
+              <div ref={bottomSentinelRef} aria-hidden className="h-px w-full" />
+            </main>
+          </motion.div>
+          <BackToTop />
+        </>
       )}
 
       <Suspense fallback={null}>
@@ -170,6 +239,7 @@ function Series() {
         <AnimatePresence>{project && <ProjectModal key="project" project={project} onClose={closeProject} onSwitch={setProject} />}</AnimatePresence>
         <AnimatePresence>{resumeOpen && <ResumeModal key="resume" onClose={closeResume} />}</AnimatePresence>
         <AnimatePresence>{activeReel && <VideoModal key="video" reel={activeReel} onClose={closeReel} onSwitch={openReel} onProgress={updateReelProgress} />}</AnimatePresence>
+        <AnimatePresence>{enquiryOpen && <EnquiryModal key="enquiry" onClose={closeEnquiry} />}</AnimatePresence>
       </Suspense>
 
       <AnimatePresence>

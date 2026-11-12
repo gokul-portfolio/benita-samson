@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { achievements, archiveChapters, certifications, education, experience, profile, projects, skillCategories } from '../data/portfolio';
-import { EASE, Magnetic, SectionHeading } from './fx';
-import GsapSplitText from './ui/GsapSplitText';
+import { achievements, archiveChapters, certifications, education, experience, founderStory, profile, projects, skillCategories } from '../data/portfolio';
+import { EASE, SectionHeading } from './fx';
 import ParallaxLayer from './ui/ParallaxLayer';
 
-/** THE FULL STORY — a designed founder dossier plus view / download actions. */
-export default function ResumeSection({ onView }: { onView: () => void }) {
+/** THE FULL STORY — a designed founder dossier. */
+export default function ResumeSection({ onView: _onView }: { onView?: () => void }) {
   return (
     <>
       <SectionHeading kicker="Founder Dossier" title="The Full Story" />
-      <div className="gutter grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
+      <div className="gutter">
         <ParallaxLayer yPercent={[3, -3]} desktopOnly>
           <motion.div
             initial={{ opacity: 0, y: 60, rotateX: 10 }}
@@ -22,53 +21,6 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
             <CollapsibleSheet />
           </motion.div>
         </ParallaxLayer>
-
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <GsapSplitText
-            as="p"
-            text="From vision to impact, on one page."
-            mode="reveal"
-            stagger={0.05}
-            className="font-serif text-3xl italic leading-tight text-bone"
-          />
-          <p className="mt-3 text-sm leading-relaxed text-mist">
-            Banking years, Madurai launch, Career HQ, Career with Beni, Connecting Dots Worldwide, and the birthday tribute — view it here or download the full PDF.
-          </p>
-          <div className="mt-6 flex flex-col gap-3">
-            <Magnetic className="w-full">
-              <button
-                type="button"
-                data-cursor="view"
-                onClick={onView}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-bone px-6 text-[15px] font-bold text-ink transition hover:bg-white"
-              >
-                ▶ View Founder PDF
-              </button>
-            </Magnetic>
-            <Magnetic className="w-full">
-              <a
-                href={profile.resumePdf}
-                download="Benita_Samson_Founder_Portfolio.pdf"
-                data-cursor="link"
-                className="glass flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-6 text-[15px] font-semibold text-bone transition hover:bg-white/15"
-              >
-                ⤓ Download Founder PDF
-              </a>
-            </Magnetic>
-          </div>
-          <dl className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-white/10 text-center">
-            {[
-              { v: '50K+', k: 'Followers' },
-              { v: '120+', k: 'Videos' },
-              { v: '8→15', k: 'Team' },
-            ].map((s) => (
-              <div key={s.k} className="bg-ink-2 px-2 py-4">
-                <dd className="font-display text-3xl leading-none text-bone">{s.v}</dd>
-                <dt className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-smoke">{s.k}</dt>
-              </div>
-            ))}
-          </dl>
-        </div>
       </div>
     </>
   );
@@ -119,6 +71,47 @@ export function ResumeSheet() {
           </a>
         </div>
       </header>
+
+      <section className="mb-10 space-y-8 border-b border-white/10 pb-8">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-crimson-2">
+            {founderStory.herStory.kicker}
+          </p>
+          <h4 className="mt-1.5 font-display text-[clamp(1.6rem,3vw,2.35rem)] leading-[0.95] tracking-wide text-bone">
+            {founderStory.herStory.title}
+          </h4>
+          <div className="mt-4 grid gap-4 md:grid-cols-3 md:gap-6">
+            {founderStory.herStory.paragraphs.map((para) => (
+              <p key={para} className="text-sm leading-relaxed text-bone/80">
+                {para}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-crimson-2">
+            {founderStory.visionFoundation.kicker}
+          </p>
+          <p className="mt-1 font-serif text-lg italic text-bone/90 sm:text-xl">
+            {founderStory.visionFoundation.subtitle}
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {founderStory.visionFoundation.pillars.map((pillar) => (
+              <div
+                key={pillar.title}
+                className="rounded-xl bg-white/[0.02] p-4 ring-1 ring-white/10"
+              >
+                <h5 className="text-sm font-semibold text-bone">{pillar.title}</h5>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-mist">{pillar.body}</p>
+              </div>
+            ))}
+          </div>
+          <blockquote className="mt-5 border-l-2 border-crimson-2/80 bg-white/[0.02] px-4 py-3 font-serif text-sm italic leading-relaxed text-bone/95 sm:text-base">
+            “{founderStory.visionFoundation.quote}”
+          </blockquote>
+        </div>
+      </section>
 
       <div className="grid gap-x-10 md:grid-cols-[1.4fr_1fr]">
         <div>

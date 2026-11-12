@@ -1,9 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
-import { achievements, certifications, teamMembers } from '../data/portfolio';
+import { achievements, teamMembers } from '../data/portfolio';
 import { SectionHeading, Tilt } from './fx';
-import { RailButtons } from './Rail';
 import { GSAP_EASE, gsap } from '../lib/gsap';
-import ParallaxLayer from './ui/ParallaxLayer';
 
 function Laurel({ side }: { side: 'l' | 'r' }) {
   return (
@@ -18,8 +16,6 @@ function Laurel({ side }: { side: 'l' | 'r' }) {
 
 export default function Achievements() {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const rail = useRef<HTMLDivElement>(null);
-  const issuers = Array.from(new Set(certifications.map((c) => c.issuer)));
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -29,7 +25,6 @@ export default function Achievements() {
     const ctx = gsap.context(() => {
       mm.add('(prefers-reduced-motion: no-preference)', () => {
         const awards = el.querySelectorAll<HTMLElement>('[data-award-card]');
-        const certs = el.querySelectorAll<HTMLElement>('[data-cert-card]');
 
         if (awards.length) {
           gsap.fromTo(
@@ -43,21 +38,6 @@ export default function Achievements() {
               stagger: 0.08,
               ease: GSAP_EASE,
               scrollTrigger: { trigger: awards[0], start: 'top 86%', once: true },
-            },
-          );
-        }
-
-        if (certs.length) {
-          gsap.fromTo(
-            certs,
-            { y: 24, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.55,
-              stagger: 0.045,
-              ease: GSAP_EASE,
-              scrollTrigger: { trigger: certs[0], start: 'top 90%', once: true },
             },
           );
         }
@@ -106,40 +86,6 @@ export default function Achievements() {
             </Tilt>
           </div>
         ))}
-      </div>
-
-      {/* Connecting Dots Ecosystem & Media rail */}
-      <div className="mt-16">
-        <div className="gutter mb-2 flex flex-wrap items-end justify-between gap-2">
-          <h3 className="font-sans text-lg font-semibold text-bone sm:text-2xl">
-            Connecting Dots Ecosystem <span className="text-mist">· {certifications.length} ventures &amp; media</span>
-          </h3>
-          <ParallaxLayer xPercent={[-4, 4]} scrub={1} desktopOnly>
-            <p className="text-xs text-smoke">{issuers.slice(0, 4).join(' · ')}</p>
-          </ParallaxLayer>
-        </div>
-        <div className="group/rail relative">
-          <div ref={rail} className="rail gutter flex snap-x gap-3 overflow-x-auto py-5">
-            {certifications.map((c) => (
-              <a
-                key={c.name}
-                data-cert-card
-                href={c.link}
-                target={c.link.startsWith('http') ? '_blank' : undefined}
-                rel={c.link.startsWith('http') ? 'noreferrer' : undefined}
-                data-cursor="link"
-                className="group relative flex w-[250px] shrink-0 snap-start flex-col justify-between rounded-xl bg-ink-2 p-4 ring-1 ring-white/10 transition hover:-translate-y-1 hover:ring-white/30"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-crimson-2">{c.issuer}</span>
-                  <span className="text-sm text-smoke transition group-hover:text-bone">↗</span>
-                </div>
-                <p className="mt-6 text-sm font-medium leading-snug text-bone">{c.name}</p>
-              </a>
-            ))}
-          </div>
-          <RailButtons rail={rail} />
-        </div>
       </div>
 
       {/* Leadership & Team (8 today → 15 in the vision) */}

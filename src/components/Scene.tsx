@@ -49,7 +49,7 @@ export default function Scene({ id, children, className = '' }: { id: string; ch
   const backdrop = SCENE_BACKDROPS[id];
 
   return (
-    <motion.section id={id} ref={ref} style={{ opacity, scale }} className={`relative scroll-mt-16 py-16 sm:py-24 ${className}`}>
+    <motion.section id={id} ref={ref} style={{ opacity, scale }} className={`relative scroll-mt-16 py-10 sm:py-14 ${className}`}>
       {backdrop && <SectionGridBackdrop {...backdrop} />}
       <div className="relative z-10">{children}</div>
     </motion.section>

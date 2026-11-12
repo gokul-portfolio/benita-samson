@@ -8,31 +8,37 @@ import {
 } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { archiveMedia, profile, type VideoReel } from '@/data/portfolio';
-import { useFinePointer, useReducedMotionPref } from '@/hooks/useMedia';
+import { useDesktop, useFinePointer, useReducedMotionPref } from '@/hooks/useMedia';
 import { PosterBackdrop } from '@/components/Poster';
+import { EASE } from '@/components/fx';
 
 interface TunnelCardData {
   reel: VideoReel;
-  angleCos: number;
-  angleSin: number;
-  radiusFactorX: number;
-  radiusFactorY: number;
+  offsetXFactor: number;
+  offsetYFactor: number;
   rotationZ: number;
   index: number;
 }
 
-const TUNNEL_CARDS: TunnelCardData[] = archiveMedia.map((reel, i) => {
-  const goldenAngle = i * 137.5 * (Math.PI / 180);
-  const radiusFactorX = 0.28 + (i % 3) * 0.08;
-  const radiusFactorY = 0.25 + (i % 2) * 0.08;
+// Balanced left & right perimeter lanes keep the center headline clear while preserving 3D depth.
+const TUNNEL_SLOTS: ReadonlyArray<{ x: number; y: number; rot: number }> = [
+  { x: 0.36, y: 0.14, rot: 4 },
+  { x: -0.36, y: -0.14, rot: -4 },
+  { x: 0.31, y: -0.27, rot: -5 },
+  { x: -0.31, y: 0.27, rot: 5 },
+  { x: 0.33, y: 0.28, rot: -3 },
+  { x: -0.33, y: -0.28, rot: 3 },
+  { x: 0.39, y: -0.04, rot: 5 },
+  { x: -0.39, y: 0.05, rot: -5 },
+];
 
+const TUNNEL_CARDS: TunnelCardData[] = archiveMedia.map((reel, i) => {
+  const slot = TUNNEL_SLOTS[i % TUNNEL_SLOTS.length];
   return {
     reel,
-    angleCos: Math.cos(goldenAngle),
-    angleSin: Math.sin(goldenAngle),
-    radiusFactorX,
-    radiusFactorY,
-    rotationZ: (i % 2 === 0 ? 1 : -1) * (3 + (i % 4) * 2),
+    offsetXFactor: slot.x,
+    offsetYFactor: slot.y,
+    rotationZ: slot.rot,
     index: i,
   };
 });
@@ -42,7 +48,6 @@ const SPRING_CONFIG = { stiffness: 60, damping: 25, mass: 0.5 };
 interface StageDimensions {
   width: number;
   height: number;
-  isMobile: boolean;
 }
 
 function useCameraParallax(enabled: boolean) {
@@ -74,25 +79,19 @@ interface TunnelCardProps {
 }
 
 function TunnelCard({ card, progress, pointer, total, stage, onSelect }: TunnelCardProps) {
-  const staggerSpan = 0.55;
+  const staggerSpan = 0.56;
   const start = (card.index / total) * (1 - staggerSpan);
   const end = start + staggerSpan;
 
   const localProgress = useTransform(progress, [start, end], [0, 1]);
 
-  const farZ = stage.isMobile ? -1200 : -1700;
-  const nearZ = stage.isMobile ? 340 : 480;
-  const z = useTransform(localProgress, [0, 1], [farZ, nearZ]);
+  const z = useTransform(localProgress, [0, 1], [-1350, 380]);
+  const opacity = useTransform(localProgress, [0, 0.22, 0.82, 0.98], [0, 1, 1, 0]);
 
-  const opacity = useTransform(localProgress, [0, 0.16, 0.82, 0.98], [0, 1, 1, 0]);
-
-  const cardWidth = stage.isMobile
-    ? Math.max(130, Math.min(176, stage.width * 0.38))
-    : Math.max(175, Math.min(255, stage.width * 0.17));
-
-  const baseX = card.angleCos * (stage.width * card.radiusFactorX);
-  const baseY = card.angleSin * (stage.height * card.radiusFactorY);
-  const panStrength = stage.isMobile ? 18 : 42;
+  const cardWidth = Math.max(168, Math.min(238, stage.width * 0.155));
+  const baseX = stage.width * card.offsetXFactor;
+  const baseY = Math.max(-270, Math.min(270, stage.height * card.offsetYFactor));
+  const panStrength = 26;
 
   const transform = useTransform(
     [z, pointer.x, pointer.y],
@@ -129,7 +128,10 @@ function TunnelCard({ card, progress, pointer, total, stage, onSelect }: TunnelC
         </PosterBackdrop>
 
         <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/15 to-transparent p-3.5 sm:p-4">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between gap-2">
+            <span className="rounded-full border border-white/15 bg-black/50 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-bone/90 backdrop-blur-md">
+              {card.reel.episode}
+            </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-black/50 text-[10px] text-bone backdrop-blur-md transition group-hover:border-bone group-hover:bg-bone group-hover:text-ink">
               {card.reel.kind === 'image' ? '⤢' : '▶'}
             </span>
@@ -155,13 +157,13 @@ export default function PerspectiveTunnelHero({
   onSelect?: (reel: VideoReel) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const isDesktop = useDesktop();
   const reduce = useReducedMotionPref();
   const fine = useFinePointer();
 
   const [stage, setStage] = useState<StageDimensions>({
     width: typeof window !== 'undefined' ? window.innerWidth : 1440,
     height: typeof window !== 'undefined' ? window.innerHeight : 900,
-    isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
   });
 
   useEffect(() => {
@@ -169,7 +171,6 @@ export default function PerspectiveTunnelHero({
       setStage({
         width: window.innerWidth,
         height: window.innerHeight,
-        isMobile: window.innerWidth < 768,
       });
     };
 
@@ -189,37 +190,82 @@ export default function PerspectiveTunnelHero({
     restDelta: 0.0001,
   });
 
-  const pointer = useCameraParallax(!reduce && fine);
+  const pointer = useCameraParallax(isDesktop && !reduce && fine);
 
-  const titleScale = useTransform(smoothProgress, [0, 0.5, 1], [0.8, 1, 1.28]);
-  const titleOpacity = useTransform(smoothProgress, [0, 0.14, 0.85, 1], [0.35, 1, 1, 0]);
+  const titleScale = useTransform(smoothProgress, [0, 0.5, 1], [0.88, 1, 1.14]);
+  const titleOpacity = useTransform(smoothProgress, [0, 0.14, 0.86, 1], [0.45, 1, 1, 0]);
   const promptOpacity = useTransform(smoothProgress, [0, 0.16], [1, 0]);
 
-  if (reduce) {
+  // Mobile, tablet (< 1024px), or reduced-motion: crisp, unobstructed grid archive
+  if (!isDesktop || reduce) {
     return (
-      <section id="showcase" className="gutter py-16">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.35em] text-crimson-2">
-          A Visual Archive · {profile.displayName}
-        </p>
-        <h2 className="mb-8 font-display text-5xl tracking-wide text-bone">THE JOURNEY IN FRAMES.</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {archiveMedia.map((reel) => (
-            <button
-              key={reel.id}
-              type="button"
-              onClick={() => onSelect?.(reel)}
-              className="group relative aspect-[9/16] overflow-hidden rounded-2xl bg-ink-2 text-left ring-1 ring-white/15"
-            >
-              <img
-                src={reel.posterUrl}
-                alt={reel.title}
-                className="h-full w-full object-cover object-top"
-              />
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/20 to-transparent p-4">
-                <span className="font-display text-xl text-bone">{reel.title}</span>
-              </div>
-            </button>
-          ))}
+      <section
+        id="showcase"
+        aria-label="Visual Archive Showcase"
+        className="relative scroll-mt-20 overflow-hidden bg-ink py-14 sm:scroll-mt-24 sm:py-20"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(229,19,43,0.18)_0%,transparent_65%)]"
+        />
+
+        <div className="gutter relative z-10">
+          <div className="mx-auto max-w-xl text-center">
+            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.26em] text-crimson-2 sm:text-[11px] sm:tracking-[0.38em]">
+              A Visual Archive · {profile.displayName}
+            </p>
+            <h2 className="font-display text-[clamp(2.65rem,11vw,4.75rem)] leading-[0.88] tracking-wide text-bone">
+              THE JOURNEY <span className="shimmer-text">IN FRAMES.</span>
+            </h2>
+            <p className="mx-auto mt-3 max-w-[36ch] text-xs font-light leading-relaxed text-mist sm:mt-4 sm:text-sm">
+              Moments of courage, reinvention, and purpose — from vision to impact.
+            </p>
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-3.5 sm:mt-10 sm:grid-cols-4 sm:gap-4 md:gap-5">
+            {archiveMedia.map((reel, idx) => (
+              <motion.button
+                key={reel.id}
+                type="button"
+                data-cursor="play"
+                onClick={() => onSelect?.(reel)}
+                initial={reduce ? false : { opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.45, delay: (idx % 4) * 0.05, ease: EASE }}
+                whileTap={{ scale: 0.97 }}
+                aria-label={reel.kind === 'image' ? `View ${reel.title}` : `Watch ${reel.title}`}
+                className="group relative aspect-[9/16] w-full overflow-hidden rounded-xl bg-ink-2 text-left ring-1 ring-white/15 transition-colors hover:ring-crimson-2/75 sm:rounded-2xl"
+              >
+                <PosterBackdrop palette={reel.palette}>
+                  <img
+                    src={reel.posterUrl}
+                    alt={reel.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                  />
+                </PosterBackdrop>
+                <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/92 via-black/20 to-transparent p-3 sm:p-3.5">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="rounded-full border border-white/15 bg-black/55 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-bone/90 backdrop-blur-md">
+                      {reel.episode}
+                    </span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/30 bg-black/50 text-[10px] text-bone backdrop-blur-md">
+                      {reel.kind === 'image' ? '⤢' : '▶'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block font-display text-lg leading-[0.95] tracking-wide text-bone sm:text-xl">
+                      {reel.title}
+                    </span>
+                    <span className="mt-1 block text-[10px] font-medium tracking-wide text-mist">
+                      {reel.meta}
+                    </span>
+                  </div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
         </div>
       </section>
     );
@@ -230,15 +276,9 @@ export default function PerspectiveTunnelHero({
       id="showcase"
       ref={wrapRef}
       aria-label="3D Spatial Reel Showcase"
-      className="relative h-[240vh] w-full"
+      className="relative h-[220vh] w-full scroll-mt-24"
     >
-      <div
-        className="sticky top-0 flex h-[100svh] w-full select-none items-center justify-center overflow-hidden bg-ink text-bone"
-        style={{
-          perspective: stage.isMobile ? '900px' : '1200px',
-          transformStyle: 'preserve-3d',
-        }}
-      >
+      <div className="sticky top-0 flex h-[100svh] w-full select-none items-center justify-center overflow-hidden bg-ink text-bone">
         {/* Clean Crimson Radial Spotlight without background line/grid overlays */}
         <div
           aria-hidden
@@ -246,23 +286,23 @@ export default function PerspectiveTunnelHero({
         />
 
         {/* Top & Bottom Soft Vignettes for Seamless Page Blending */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink to-transparent" />
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-ink to-transparent" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-ink to-transparent" />
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-ink to-transparent" />
 
-        {/* Central Anchor Typography */}
+        {/* Central Anchor Typography kept cleanly above background depth cards */}
         <motion.div
           style={{ scale: titleScale, opacity: titleOpacity }}
-          className="pointer-events-none z-0 flex max-w-xl flex-col items-center px-6 text-center"
+          className="pointer-events-none relative z-20 flex max-w-lg flex-col items-center px-6 text-center"
         >
           <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.42em] text-crimson-2">
             A Visual Archive · {profile.displayName}
           </p>
-          <h2 className="font-display text-[clamp(3.2rem,9.2vw,7rem)] leading-[0.86] tracking-wide text-bone">
+          <h2 className="font-display text-[clamp(3.2rem,7.2vw,6.25rem)] leading-[0.86] tracking-wide text-bone drop-shadow-[0_12px_36px_rgba(7,7,10,0.85)]">
             THE JOURNEY
             <br />
             <span className="shimmer-text">IN FRAMES.</span>
           </h2>
-          <p className="mt-4 max-w-[38ch] text-sm font-light text-mist sm:text-base">
+          <p className="mt-4 max-w-[36ch] text-sm font-light text-mist sm:text-base">
             Moments of courage, reinvention, and purpose — from vision to impact.
           </p>
         </motion.div>
@@ -278,8 +318,8 @@ export default function PerspectiveTunnelHero({
 
         {/* 3D Z-Space Plane */}
         <div
-          className="pointer-events-none absolute inset-0"
-          style={{ transformStyle: 'preserve-3d' }}
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
         >
           {TUNNEL_CARDS.map((card) => (
             <TunnelCard
