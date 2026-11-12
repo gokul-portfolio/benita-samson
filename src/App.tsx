@@ -137,7 +137,7 @@ function Series() {
           (entries) => {
             if (entries.some((e) => e.isIntersecting)) {
               triggerOnce();
-              io.disconnect();
+              io?.disconnect();
             }
           },
           { rootMargin: '0px', threshold: 0.1 },

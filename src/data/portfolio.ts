@@ -9,7 +9,7 @@ export type Palette = { from: string; via: string; to: string; accent: string };
 export const profile = {
   fullName: 'Benita Samson',
   displayName: 'Benita Samson',
-  firstName: 'BENITA',
+  firstName: 'BENITA SAMSON',
   seriesTag: 'FOUNDER & CEO',
   /** Studio card shown at the very start of the opening sequence. */
   originalLabel: 'CONNECTING DOTS WORLDWIDE',
@@ -329,6 +329,34 @@ export const projects: Project[] = [
     palette: { from: '#1d070a', via: '#6b121b', to: '#090608', accent: '#fb7185' },
     motif: 'tenants',
   },
+  {
+    id: 'the-reality-project',
+    title: 'TRP – The Reality Project',
+    year: 'Media Show',
+    genre: 'Documentary • Everyday Professions • Mic & Mentors',
+    logline:
+      'Stories of everyday professions — spotlighting the real people, skills, and journeys behind essential work through Mic & Mentors.',
+    stack: ['Everyday Professions', 'Mic & Mentors', 'Documentary', 'Storytelling'],
+    build: [
+      'Real-world conversations celebrating everyday professions and community heroes under Mic & Mentors media.',
+      'Bridging youth curiosity with authentic career and life stories.',
+    ],
+    features: [
+      'Real-world conversations celebrating everyday professions and community heroes',
+      'Flagship documentary series under Mic & Mentors media',
+      'Bridging youth curiosity with authentic career and life stories',
+    ],
+    metrics: [
+      { value: 'Stories', label: 'everyday professions' },
+      { value: 'Mic & Mentors', label: 'media platform' },
+      { value: 'Documentary', label: 'field storytelling' },
+      { value: 'Impact', label: 'human-first lens' },
+    ],
+    logo: '/assets/images/logo/the-reality-project-clean.png',
+    logoTheme: 'dark',
+    palette: { from: '#181008', via: '#5c2810', to: '#08080c', accent: '#f59e0b' },
+    motif: 'flow',
+  },
 ];
 
 export type Achievement = {
@@ -629,7 +657,7 @@ export const introSlides: IntroSlide[] = [
     title: '8 Today · 15 Ahead',
     lines: [
       'Benita Samson & Gandhi leading Vino, Manimalan, Sajitha, Ashwini, Malathi & Agalya',
-      'Happy Birthday, Benita — The Journey Continues',
+      'Happy Birthday, Benita Samson — The Journey Continues',
     ],
   },
 ];
@@ -646,7 +674,7 @@ export const viewerProfiles: {
 }[] = [
   {
     id: 'benita',
-    name: 'Benita',
+    name: 'Benita Samson',
     blurb: 'The full founder journey, in order',
     color: '#e5132b',
     order: ['about', 'moments', 'picks', 'originals', 'story'],
@@ -675,13 +703,13 @@ export const viewerProfiles: {
 ];
 
 export const sectionMeta: Record<SectionId, { nav: string; card: string; meta: string; palette: Palette }> = {
-  about: { nav: 'Story', card: 'Founder Story', meta: 'The Woman Beyond the Vision', palette: violet },
+  about: { nav: 'Founder', card: 'Founder Story', meta: 'The Woman Beyond the Vision', palette: violet },
   journey: { nav: 'Journey', card: 'Her Journey', meta: `${seasons.length} Chapters`, palette: amber },
   originals: { nav: 'Ventures', card: 'Ventures', meta: `${projects.length} Flagship Pillars`, palette: crimson },
   picks: { nav: 'Milestones', card: 'Top 10 Milestones', meta: '10 Defining Chapters', palette: jade },
   skills: { nav: 'Pillars', card: 'Focus Areas', meta: `${skillCategories.length} Domains`, palette: ocean },
-  moments: { nav: 'Ecosystem', card: 'Ecosystem & Team', meta: `8 → 15 Team • 9 Initiatives`, palette: crimson },
-  story: { nav: 'Dossier', card: 'The Full Story', meta: 'Founder Profile & Tribute PDF', palette: violet },
+  moments: { nav: 'Impact', card: 'Impact & Team', meta: `8 → 15 Team • Milestones`, palette: crimson },
+  story: { nav: 'Full Story', card: 'The Full Story', meta: 'Founder Profile & Tribute', palette: violet },
 };
 
 export type VideoReel = {
@@ -700,6 +728,11 @@ const REEL_1 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794385103/Le
 const REEL_2 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794385103/benita_2_secret_AI_tool.mp4';
 const REEL_3 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794385115/ranking_for_common_study_method_BENITA.mp4';
 const REEL_4 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794385124/Benita_If_you_don_t_want_your_son_to_struggle_in_future_teach_these_things.mp4';
+const REEL_5 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794484482/savefromins.com_Your_goals_need_your_attention_not_endless_scrolling.__Less_distraction_more_direction.___StayFocused_PersonalGrowth_DigitalDetox_LifeLessons_Benita_0_1080P.mp4';
+const REEL_6 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794484472/savefromins.com_Does_your_child_ask_endless_questions___That_curiosity_can_be_a_sign_of_active_learning_an..._and_creative_ways_of_explaining_ideas_too.___ChildDevelopment_ParentingTips_ChildPsychology_SmartKids_Benita_0_1080P.mp4';
+const REEL_7 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794484469/savefromins.com_Today_s_teens_aren_t_just_studying_they_re_carrying_pressure_from_every_direction.___..._mental_load_your_child_is_carrying._%EF%B8%8F___StudyPressure_TeenMentalHealth_ParentingTips_StudentLife_Benita_0_1080P.mp4';
+const REEL_8 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794484466/savefromins.com_3_ChatGPT_prompts_every_student_should_know__Revise_faster_understand_tough_topics_a..._smarter.___Comment_PROMPT_and_I_ll_DM_you_all_3____ChatGPTTips_StudyHacks_ExamPreparation_AITools_Benita_0_1080P.mp4';
+const REEL_9 = 'https://res.cloudinary.com/dq5bryk8r/video/upload/v1794484465/savefromins.com_Make_your_resume_sound_more_professional_with_powerful_action_words.___Comment_RESUME_to_get_more_word_suggestions____ResumeTips_CareerGuidance_JobSearch_Freshers_Benita_0_1080P.mp4';
 
 const makeReel = (
   index: number,
@@ -725,10 +758,11 @@ export const videoReels: VideoReel[] = [
   makeReel(2, REEL_2, 'Secret AI Tool', 'Reel • AI Showcase', crimson),
   makeReel(3, REEL_3, 'Study Method Ranking', 'Reel • Retention Cut', amber),
   makeReel(4, REEL_4, 'Future-Ready Skills', 'Reel • Storytelling', ocean),
-  makeReel(5, REEL_1, 'What Lasts — Cut II', 'Edit • Pacing & Sound', jade),
-  makeReel(6, REEL_2, 'AI Tool — Cut II', 'Edit • Motion & Hook', crimson),
-  makeReel(7, REEL_3, 'Study Ranking — Cut II', 'Edit • Captions & Flow', violet),
-  makeReel(8, REEL_4, 'Future Skills — Cut II', 'Edit • Full Production', amber),
+  makeReel(5, REEL_5, 'Less Distraction, More Direction', 'Reel • Focus & Growth', jade),
+  makeReel(6, REEL_6, 'Curiosity & Active Learning', 'Reel • Child Psychology', crimson),
+  makeReel(7, REEL_7, 'Understanding Teen Pressure', 'Reel • Student Life', violet),
+  makeReel(8, REEL_8, '3 ChatGPT Prompts for Students', 'Reel • AI Study Hacks', amber),
+  makeReel(9, REEL_9, 'Resume Action Words', 'Reel • Career Guidance', ocean),
 ];
 
 const makeFrame = (
@@ -765,7 +799,7 @@ export const founderStory = {
     kicker: 'HER STORY',
     title: 'The Courage to Begin Again',
     paragraphs: [
-      'Not born into a business family, Benita spent nearly a decade in Australian banking at National Australia Bank (NAB) and Commonwealth Bank of Australia (CBA) — while nurturing a five-year dream to build something of her own.',
+      'Not born into a business family, Benita Samson spent nearly a decade in Australian banking at National Australia Bank (NAB) and Commonwealth Bank of Australia (CBA) — while nurturing a five-year dream to build something of her own.',
       'Driven by conviction, she walked away from an established career, sold her home and cars in Australia, and moved to India to pursue entrepreneurship.',
       'In February 2025, she brought the Hope Education & Migration franchise to Madurai, spending six months mastering the Indian admission ecosystem and laying the groundwork with a founding team of four.',
     ],

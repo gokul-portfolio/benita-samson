@@ -91,7 +91,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
           className="relative font-display leading-[0.85] text-bone will-change-transform"
           style={{ fontSize: 'clamp(3.2rem, 11vw, 10rem)' }}
         >
-          HAPPY BIRTHDAY, BENITA!
+          HAPPY BIRTHDAY, BENITA SAMSON!
         </h2>
       </ParallaxLayer>
 

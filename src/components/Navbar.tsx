@@ -13,7 +13,18 @@ type NavbarProps = {
 
 type NavItem = { id: string; label: string };
 
-const PRIMARY_NAV_IDS = new Set(['top', 'reels', 'showcase', 'about', 'originals', 'moments']);
+const PRIMARY_NAV_IDS = new Set([
+  'top',
+  'reels',
+  'showcase',
+  'deck',
+  'about',
+  'moments',
+  'picks',
+  'originals',
+  'instagram',
+  'story',
+]);
 
 export default function Navbar({ order, onEnquire }: NavbarProps) {
   const { scrollY, scrollYProgress } = useScroll();
@@ -30,20 +41,25 @@ export default function Navbar({ order, onEnquire }: NavbarProps) {
     if (y < 140) setActive('top');
   });
 
-  // Collect only sections currently rendered on the page
+  // Collect all sections in exact top-to-bottom page order
   useEffect(() => {
-    const extras: NavItem[] = [
+    const topSections: NavItem[] = [
       { id: 'reels', label: 'Reels' },
       { id: 'showcase', label: 'Archive' },
       { id: 'deck', label: 'Deck' },
-      { id: 'instagram', label: 'Instagram' },
     ].filter((item) => Boolean(document.getElementById(item.id)));
 
-    const present = order
-      .filter((id) => Boolean(document.getElementById(id)))
-      .map((id) => ({ id, label: sectionMeta[id].nav }));
+    const orderedSections: NavItem[] = [];
+    for (const id of order) {
+      if (id === 'story' && document.getElementById('instagram')) {
+        orderedSections.push({ id: 'instagram', label: 'Instagram' });
+      }
+      if (document.getElementById(id)) {
+        orderedSections.push({ id, label: sectionMeta[id].nav });
+      }
+    }
 
-    const items: NavItem[] = [{ id: 'top', label: 'Home' }, ...extras, ...present];
+    const items: NavItem[] = [{ id: 'top', label: 'Home' }, ...topSections, ...orderedSections];
     setNavItems(items);
 
     const ids = [...items.map((i) => i.id), 'contact'];
@@ -138,7 +154,7 @@ export default function Navbar({ order, onEnquire }: NavbarProps) {
         </button>
 
         {/* Center: Clean Editorial Navigation Links */}
-        <nav aria-label="Primary navigation" className="hidden items-center gap-6 lg:flex xl:gap-8">
+        <nav aria-label="Primary navigation" className="hidden items-center gap-4 lg:flex xl:gap-6">
           {primaryItems.map((item) => {
             const isActive = active === item.id;
             return (

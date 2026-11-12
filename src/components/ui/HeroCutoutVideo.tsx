@@ -96,7 +96,7 @@ export default function HeroCutoutVideo({
   title,
   ariaLabel,
 }: {
-  videoRef: RefObject<HTMLVideoElement | null>;
+  videoRef: RefObject<HTMLVideoElement>;
   primarySrc: string;
   fallbackSrc?: string;
   autoPlay: boolean;
