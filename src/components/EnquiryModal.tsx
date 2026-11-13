@@ -7,8 +7,13 @@ const TOPICS = [
   'General Enquiry',
   'Career HQ',
   'Industry Connect',
-  'Media & Speaking',
-  'Partnership',
+  'A T O M',
+  'DNA',
+  'The Blind Spot',
+  'Career with Beni',
+  'Mic & Mentors',
+  'TRP - The Reality Project (Show)',
+  'Partnership & Collaboration',
 ] as const;
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error';

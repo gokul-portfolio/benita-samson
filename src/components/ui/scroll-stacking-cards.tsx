@@ -92,21 +92,21 @@ const MEDIA_VENTURES_PORTFOLIO: PortfolioProject = {
   genre: 'Upcoming • YouTube Channel & Documentary Show',
   logline:
     "Alongside her education and entrepreneurial work, Benita's wider vision includes media and knowledge-sharing platforms that bring stories, experience and perspectives to a wider audience.",
-  stack: ['Mic & Mentors', 'TRP – The Reality Project', 'Upcoming YouTube Channel', 'Founder Interviews', 'Documentary Show'],
+  stack: ['Mic & Mentors', 'TRP - The Reality Project', 'Upcoming YouTube Channel', 'Founder Interviews', 'Documentary Show'],
   build: [
     'Mic & Mentors is an upcoming interview-led YouTube channel featuring founders, CEOs, industry experts and experienced professionals.',
-    'TRP – The Reality Project is a documentary-style show concept built around real people, overlooked professions and everyday stories that deserve to be seen and heard.',
+    'TRP - The Reality Project is a documentary-style show concept built around real people, overlooked professions and everyday stories that deserve to be seen and heard.',
   ],
   features: [
     'Mic & Mentors — Upcoming interview-led YouTube channel',
-    'TRP – The Reality Project — Documentary show inside Mic & Mentors',
+    'TRP - The Reality Project — Documentary show inside Mic & Mentors',
     'Interviews featuring founders, CEOs and industry experts',
     'Documentary storytelling around overlooked professions and everyday people',
   ],
   metrics: [
     { value: 'YouTube', label: 'Flagship Platform' },
     { value: 'Leaders', label: 'Founders & CEOs' },
-    { value: 'TRP Show', label: 'Documentary Concept' },
+    { value: 'TRP SHOW', label: 'The Reality Project' },
     { value: 'Stories', label: 'Everyday Professions' },
   ],
   externalUrl: 'https://www.instagram.com/careerwithbeni/',
@@ -137,7 +137,7 @@ export const DEFAULT_PROJECTS: Project[] = [
   {
     id: 'media-content-ventures',
     name: 'Media & Content',
-    summary: 'Upcoming • YouTube — Mic & Mentors and TRP – The Reality Project',
+    summary: 'Upcoming • YouTube — Mic & Mentors and TRP - The Reality Project (Show)',
     url: 'https://www.instagram.com/careerwithbeni/',
     display: 'Upcoming on YouTube',
     accent: '#38bdf8',
@@ -564,7 +564,7 @@ function Slide1CareerHQ({ project }: { project: PortfolioProject }) {
 
             {/* Streamlined Hero Narrative */}
             <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-bone/90">
-              Co-founded by <strong className="text-bone font-semibold">Benita &amp; Gandhi</strong> on <span className="text-[#ff3d5a] font-medium">15 October 2025</span>, uniting complementary strengths under one shared brand to connect students with educational opportunities, career pathways, and institutional partnerships across India and worldwide.
+              Founded by <strong className="text-bone font-semibold">Benita Samson</strong> on <span className="text-[#ff3d5a] font-medium">15 October 2025</span>, uniting educational expertise under one shared brand to connect students with educational opportunities, career pathways, and institutional partnerships across India and worldwide.
             </p>
 
             {/* 6 Pillars Compact Grid */}
@@ -897,7 +897,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
 
               <div className="rounded-xl border border-white/10 bg-black/45 p-2.5 backdrop-blur-md transition-all duration-300 hover:border-white/20">
                 <div className="flex items-center justify-between">
-                  <p className="font-display text-sm sm:text-base font-bold text-bone tracking-wide">TRP – REALITY PROJECT</p>
+                  <p className="font-display text-sm sm:text-base font-bold text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
                   <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-bone/80">
                     SHOW
                   </span>
@@ -912,7 +912,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
             <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-[#38bdf8]/30 bg-black/45 px-3 py-2 backdrop-blur-sm shadow-[0_0_15px_rgba(56,189,248,0.1)]">
               <span className="h-2 w-2 rounded-full bg-[#38bdf8] shrink-0 animate-pulse" />
               <p className="text-[10.5px] leading-snug text-mist">
-                <strong className="text-bone font-medium">Channel Architecture:</strong> <span className="text-[#38bdf8]">Mic &amp; Mentors</span> is the upcoming YouTube channel. <span className="text-bone">TRP – The Reality Project</span> is a separate show within the channel (not a second channel).
+                <strong className="text-bone font-medium">Channel Architecture:</strong> <span className="text-[#38bdf8]">Mic &amp; Mentors</span> is the upcoming YouTube channel. <span className="text-bone">TRP - The Reality Project</span> is a separate show within the channel (not a second channel).
               </p>
             </div>
 
@@ -921,7 +921,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
               {[
                 'YouTube Channel',
                 'Mic & Mentors',
-                'TRP Reality Show',
+                'TRP - The Reality Project (Show)',
                 'Founder Interviews',
                 'Overlooked Professions',
               ].map((tag) => (
@@ -960,13 +960,13 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
                 {/* Production screen */}
                 <div className="relative w-64 rounded-2xl border-2 border-[#38bdf8]/40 bg-gradient-to-b from-[#081a28]/95 to-[#040c14]/98 p-4 shadow-[0_30px_70px_-15px_rgba(2,132,199,0.5)] backdrop-blur-xl">
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-                    <p className="font-display text-lg text-bone tracking-wide">MIC &amp; MENTORS</p>
+                    <p className="font-display text-lg text-bone tracking-wide">PODCAST</p>
                     <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">YOUTUBE</span>
                   </div>
                   <p className="text-[10px] leading-relaxed text-mist">Interviews with Founders, CEOs &amp; Industry Leaders</p>
 
                   <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
-                    <p className="font-display text-base text-bone tracking-wide">TRP – THE REALITY PROJECT</p>
+                    <p className="font-display text-base text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
                     <span className="text-[9px] font-bold uppercase tracking-wider text-bone/70">SHOW</span>
                   </div>
                   <p className="text-[10px] leading-relaxed text-mist">Documentaries on Real People &amp; Overlooked Professions</p>
@@ -983,7 +983,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
                   Channel Architecture
                 </p>
-                <p className="text-[10px] text-bone font-medium">TRP is a show inside Mic &amp; Mentors</p>
+                <p className="text-[10px] text-bone font-medium">TRP - The Reality Project is a show inside Mic &amp; Mentors</p>
               </motion.div>
 
               {/* Layer 4: Floating YouTube Play Emblem (Z: 90px) */}
@@ -1006,7 +1006,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
         <div className="grid max-w-[calc(100%-180px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4">
           <MetricBadge value="YOUTUBE" label="Flagship Platform" accent="#38bdf8" />
           <MetricBadge value="LEADERS" label="Founders & CEOs" accent="#38bdf8" />
-          <MetricBadge value="TRP SHOW" label="Documentary Concept" accent="#38bdf8" />
+          <MetricBadge value="TRP SHOW" label="The Reality Project" accent="#38bdf8" />
           <MetricBadge value="STORIES" label="Everyday Professions" accent="#38bdf8" />
         </div>
       </div>

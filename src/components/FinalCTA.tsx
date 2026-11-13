@@ -50,7 +50,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
   const ctas = [
     { label: "Connect · Email", href: `mailto:${profile.email}?subject=${encodeURIComponent("Connecting with Benita Samson")}`, primary: true, cursor: 'play' },
     { label: 'Career HQ', href: profile.links.careerhq, cursor: 'link' },
-    { label: 'Instagram', href: profile.links.instagram, cursor: 'link' },
+    { label: 'Career with Beni', href: profile.links.instagram, cursor: 'link' },
     { label: `Call · ${profile.phone}`, href: `tel:${profile.phone}`, cursor: 'link' },
   ];
 

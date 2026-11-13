@@ -68,7 +68,7 @@ export default function Achievements() {
                   </div>
                   <Laurel side="r" />
                 </div>
-                <h3 className="relative mt-6 font-display text-[2.1rem] leading-[0.92] tracking-wide text-bone">{a.title}</h3>
+                <h3 className="relative mt-6 font-display text-[1.85rem] sm:text-[2.05rem] leading-[0.92] tracking-wide text-bone">{a.title}</h3>
                 <p className="relative mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#d9b46a]">{a.org}</p>
                 <p className="relative mt-4 text-[13px] leading-relaxed text-bone/70">{a.detail}</p>
                 {a.link && (
@@ -88,18 +88,43 @@ export default function Achievements() {
         ))}
       </div>
 
-      {/* Leadership & Team (8 today → 15 in the vision) */}
-      <div className="gutter mt-14">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <h3 className="font-sans text-lg font-semibold text-bone sm:text-2xl">
-            Leadership &amp; Team <span className="text-mist">· Eight people today. A team of fifteen in the vision.</span>
+      {/* Leadership & Team (Advanced Premium UI) */}
+      <div className="gutter mt-16">
+
+        {/* Enhanced Heading with sleek divider */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <h3 data-team-heading className="flex items-center gap-4 font-sans text-xl font-semibold tracking-tight text-bone sm:text-3xl">
+            Leadership &amp; Team
+            <span className="hidden h-px w-10 bg-gradient-to-r from-[#d9b46a]/60 to-transparent sm:block"></span>
+            <span className="text-sm font-medium tracking-wide text-mist/70 sm:text-base">
+              8 today <span className="mx-1 text-[#d9b46a]/80">→</span> 15 in the vision
+            </span>
           </h3>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+        {/* Advanced Grid Cards */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {teamMembers.map((m) => (
-            <div key={m.name} className="rounded-xl bg-ink-2 p-4 ring-1 ring-white/10">
-              <p className="font-display text-2xl leading-none tracking-wide text-bone">{m.name}</p>
-              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-crimson-2">{m.role}</p>
+            <div
+              key={m.name}
+              data-team-card /* Keep this for GSAP animation */
+              className="group relative overflow-hidden rounded-2xl bg-[radial-gradient(120%_120%_at_50%_0%,#1a1510,#0a0806_70%,#000000)] p-5 ring-1 ring-white/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(217,180,106,0.15)] hover:ring-[#d9b46a]/50"
+            >
+              {/* Glassmorphism Top Highlight Line */}
+              <div aria-hidden className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#d9b46a]/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+              {/* Subtle Ambient Glow on Hover */}
+              <div aria-hidden className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#d9b46a]/0 blur-[30px] transition-all duration-700 group-hover:bg-[#d9b46a]/20 group-hover:blur-[40px]" />
+
+              {/* Card Content */}
+              <div className="relative z-10">
+                <p className="font-display text-2xl leading-tight tracking-wide text-bone drop-shadow-sm transition-colors duration-300 group-hover:text-white">
+                  {m.name}
+                </p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-crimson-2/80 transition-colors duration-300 group-hover:text-crimson-2">
+                  {m.role}
+                </p>
+              </div>
             </div>
           ))}
         </div>

@@ -9,10 +9,11 @@ import ParallaxLayer from './ui/ParallaxLayer';
 export default function About() {
   const sectionBodyRef = useRef<HTMLDivElement>(null);
   const facts = [
+    { k: 'Sales & Fundraising', v: 'Sales Course & Trust (Fundraising)', s: '2015 · Community fundraising & public trust' },
     { k: 'Australian Banking', v: `${education[0].score} · NAB & CBA`, s: 'Walked away to build her own path' },
-    { k: 'Madurai Launch', v: experience[2].company, s: 'Feb 2025 · Founding team of 4' },
-    { k: 'Shared Brand', v: `${experience[1].company} (with Gandhi)`, s: 'Logo created 15 October 2025' },
-    { k: 'Parent Company', v: experience[0].company, s: profile.location },
+    { k: 'Madurai Launch', v: experience[3]?.company ?? 'Hope Education & Migration', s: 'Feb 2025 · Founding team of 4' },
+    { k: 'Shared Brand', v: experience[1].company, s: 'Logo created 15 October 2025' },
+    { k: 'Parent Company', v: experience[0].company, s: '4 Companies: Career HQ · Industry Connect · A T O M · DNA' },
   ];
 
   useLayoutEffect(() => {
@@ -150,8 +151,12 @@ export default function About() {
               className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-crimson via-crimson-2 to-transparent"
             />
             <dl className="grid gap-px bg-white/10 sm:grid-cols-2">
-              {facts.map((f) => (
-                <div key={f.k} data-about-fact className="bg-ink-2 p-4">
+              {facts.map((f, i) => (
+                <div
+                  key={f.k}
+                  data-about-fact
+                  className={`bg-ink-2 p-4 ${i === 4 ? 'sm:col-span-2' : ''}`}
+                >
                   <dt className="text-[10px] font-bold uppercase tracking-[0.26em] text-smoke">{f.k}</dt>
                   <dd className="mt-1.5 text-sm font-semibold text-bone sm:text-base">{f.v}</dd>
                   <dd className="mt-0.5 text-xs text-mist">{f.s}</dd>

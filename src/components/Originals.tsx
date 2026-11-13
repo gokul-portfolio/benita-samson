@@ -20,11 +20,11 @@ function Intro() {
   return (
     <div className="flex w-full shrink-0 flex-col justify-center lg:w-[34vw]">
       <p className="mb-3 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-crimson-2">
-        <span className="h-px w-8 bg-crimson-2" /> {projects.length} Ecosystem Ventures · Connecting Dots Worldwide
+        <span className="h-px w-8 bg-crimson-2" /> Connecting Dots Worldwide
       </p>
       <RevealText as="h2" text="THE VENTURES" className="font-display text-[clamp(3.5rem,9vw,8rem)] leading-[0.85] text-bone" />
       <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-mist">
-        Connecting Dots Worldwide is the parent company identity connecting education, industry, knowledge, digital learning, media and social impact.
+        Connecting Dots Worldwide is the parent company behind Career HQ, Industry Connect, A T O M, and DNA — alongside The Blind Spot and TRP - The Reality Project.
       </p>
       <p className="mt-6 hidden text-xs tracking-[0.24em] text-smoke lg:block">SCROLL TO BROWSE →</p>
     </div>

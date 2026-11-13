@@ -10,12 +10,12 @@ export default function TopPicks() {
   const rail = useRef<HTMLDivElement>(null);
   return (
     <>
-      <SectionHeading kicker="Top 10 · Entrepreneurial Journey" title="Benita Samson's Milestones" />
+      <SectionHeading kicker="Top 15 · Entrepreneurial Journey" title="Benita Samson's Milestones" />
       <div className="group/rail relative">
         <div ref={rail} className="rail gutter flex snap-x snap-mandatory gap-2 overflow-x-auto py-6">
           {topPicks.map((pick, i) => (
             <motion.div
-              key={pick.title}
+              key={`${pick.title}-${i}`}
               className="group relative flex h-[260px] shrink-0 snap-start items-end sm:h-[300px]"
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -26,7 +26,10 @@ export default function TopPicks() {
                 <span
                   aria-hidden
                   className="text-outline block select-none font-display leading-[0.78] transition duration-500 group-hover:[-webkit-text-stroke-color:rgba(255,61,90,0.85)]"
-                  style={{ fontSize: i === 9 ? 'clamp(9rem, 22vw, 15rem)' : 'clamp(11rem, 26vw, 19rem)', letterSpacing: i === 9 ? '-0.06em' : 0 }}
+                  style={{
+                    fontSize: i >= 9 ? 'clamp(8.5rem, 20vw, 14.5rem)' : 'clamp(11rem, 26vw, 19rem)',
+                    letterSpacing: i >= 9 ? '-0.07em' : 0,
+                  }}
                 >
                   {i + 1}
                 </span>

@@ -14,7 +14,7 @@ const item = {
 
 const HERO_ROLES = [
   'FOUNDER & CEO',
-  'CO-FOUNDER · CAREER HQ',
+  'FOUNDER · THE BLIND SPOT',
   'CREATOR · CAREER WITH BENI',
   'HOST · MIC & MENTORS',
 ];
@@ -280,8 +280,7 @@ export default function Hero({
 
   const floating = [
     { text: '50,000+ Followers', sub: 'Career with Beni · 120+ Videos', pos: 'bottom-[24%] left-0 xl:-left-4', depth: 1 },
-    { text: 'Career HQ', sub: 'Co-Founder & CEO · Oct 2025', pos: 'top-[12%] right-0 xl:right-2', depth: -1 },
-    { text: 'Connecting Dots', sub: 'Registered in Australia · 2025', pos: 'bottom-[18%] right-0 xl:right-2', depth: 0.6 },
+    { text: 'Connecting Dots', sub: 'Registered in Australia · 2025', pos: 'top-[12%] right-0 xl:right-2', depth: -1 },
   ];
 
   return (
@@ -342,7 +341,7 @@ export default function Hero({
           >
             <motion.div variants={item} className="mb-2.5 sm:mb-3">
               <span className="inline-flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-crimson-2 sm:gap-2 sm:text-[11px] sm:tracking-[0.3em]">
-                Connecting Dots Worldwide <span className="text-mist/60">·</span> Career HQ
+                Connecting Dots Worldwide <span className="text-mist/60">·</span> The Blind Spot
               </span>
             </motion.div>
 
