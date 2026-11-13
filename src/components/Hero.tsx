@@ -14,6 +14,7 @@ const item = {
 
 const HERO_ROLES = [
   'FOUNDER & CEO',
+  'CONNECTING DOTS WORLDWIDE',
   'FOUNDER · THE BLIND SPOT',
   'CREATOR · CAREER WITH BENI',
   'HOST · MIC & MENTORS',
@@ -400,11 +401,10 @@ export default function Hero({
                 onClick={toggleVoice}
                 aria-label={isMuted ? 'Enable video voice audio' : 'Mute video voice audio'}
                 title={isMuted ? 'Tap for Voice' : 'Mute Voice'}
-                className={`absolute bottom-4 right-2 z-[35] flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition sm:bottom-5 sm:right-6 ${
-                  isMuted
+                className={`absolute bottom-4 right-2 z-[35] flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition sm:bottom-5 sm:right-6 ${isMuted
                     ? 'border-crimson-2/60 bg-crimson text-white shadow-[0_0_20px_rgba(229,19,43,0.55)] hover:bg-crimson-2'
                     : 'border-white/15 bg-[#100408]/75 text-bone hover:border-white/35 hover:bg-[#100408]/95'
-                }`}
+                  }`}
               >
                 {isMuted ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>

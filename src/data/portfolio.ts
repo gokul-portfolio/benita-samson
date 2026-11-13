@@ -19,7 +19,7 @@ export const profile = {
     'After nearly a decade in Australian banking (NAB & CBA), Benita Samson walked away from conventional comfort to build Connecting Dots Worldwide, establish The Blind Spot, and grow Career with Beni to 50,000+ followers.',
   quote: 'Success is not just about what is achieved. It is about having the courage to create what does not yet exist.',
   location: 'Madurai, India · Registered in Australia',
-  email: 'beni@careerhq.in',
+  email: 'benitasamson@gmail.com',
   phone: '8124810001',
   links: {
     portfolio: 'https://benitasamson.com',
@@ -106,16 +106,16 @@ export const experience = [
       'Focused on bringing overlooked people, unheard stories, and ignored realities into focus for lasting positive social change.',
     ],
   },
-  {
-    company: 'Hope Education & Migration',
-    role: 'Franchise Founder',
-    place: 'Madurai, India',
-    period: 'February 2025',
-    points: [
-      'Walked away from an established banking career in Australia, sold her home and cars, and brought the Hope Education & Migration franchise to Madurai, India.',
-      'Spent the first six months exploring the Indian education market, meeting counsellors, understanding admissions, and laying the groundwork with a founding team of four.',
-    ],
-  },
+  // {
+  //   company: 'Hope Education & Migration',
+  //   role: 'Franchise Founder',
+  //   place: 'Madurai, India',
+  //   period: 'February 2025',
+  //   points: [
+  //     'Walked away from an established banking career in Australia, sold her home and cars, and brought the Hope Education & Migration franchise to Madurai, India.',
+  //     'Spent the first six months exploring the Indian education market, meeting counsellors, understanding admissions, and laying the groundwork with a founding team of four.',
+  //   ],
+  // },
 ];
 
 export type Metric = { value: string; label: string };
@@ -312,34 +312,34 @@ export const projects: Project[] = [
     palette: { from: '#1d070a', via: '#6b121b', to: '#090608', accent: '#fb7185' },
     motif: 'tenants',
   },
-  {
-    id: 'the-reality-project',
-    title: 'TRP - The Reality Project',
-    year: 'Show · Mic & Mentors',
-    genre: 'Show • Documentary • Everyday Professions • Mic & Mentors',
-    logline:
-      'Show: TRP - The Reality Project — Stories of everyday professions, spotlighting the real people, skills, and journeys behind essential work through Mic & Mentors.',
-    stack: ['Show', 'TRP - The Reality Project', 'Mic & Mentors', 'Everyday Professions', 'Documentary'],
-    build: [
-      'TRP - The Reality Project is a dedicated documentary-style show within the upcoming Mic & Mentors YouTube channel.',
-      'Real-world conversations celebrating everyday professions and community heroes under Mic & Mentors media.',
-    ],
-    features: [
-      'Show: TRP - The Reality Project — Flagship documentary show under Mic & Mentors',
-      'Real-world conversations celebrating everyday professions and community heroes',
-      'Bridging youth curiosity with authentic career and life stories',
-    ],
-    metrics: [
-      { value: 'Show', label: 'TRP - The Reality Project' },
-      { value: 'Mic & Mentors', label: 'YouTube channel' },
-      { value: 'Documentary', label: 'field storytelling' },
-      { value: 'Impact', label: 'human-first lens' },
-    ],
-    logo: '/assets/images/logo/the-reality-project-clean.png',
-    logoTheme: 'dark',
-    palette: { from: '#181008', via: '#5c2810', to: '#08080c', accent: '#f59e0b' },
-    motif: 'flow',
-  },
+  // {
+  //   id: 'the-reality-project',
+  //   title: 'TRP - The Reality Project',
+  //   year: 'Show · Mic & Mentors',
+  //   genre: 'Show • Documentary • Everyday Professions • Mic & Mentors',
+  //   logline:
+  //     'Show: TRP - The Reality Project — Stories of everyday professions, spotlighting the real people, skills, and journeys behind essential work through Mic & Mentors.',
+  //   stack: ['Show', 'TRP - The Reality Project', 'Mic & Mentors', 'Everyday Professions', 'Documentary'],
+  //   build: [
+  //     'TRP - The Reality Project is a dedicated documentary-style show within the upcoming Mic & Mentors YouTube channel.',
+  //     'Real-world conversations celebrating everyday professions and community heroes under Mic & Mentors media.',
+  //   ],
+  //   features: [
+  //     'Show: TRP - The Reality Project — Flagship documentary show under Mic & Mentors',
+  //     'Real-world conversations celebrating everyday professions and community heroes',
+  //     'Bridging youth curiosity with authentic career and life stories',
+  //   ],
+  //   metrics: [
+  //     { value: 'Show', label: 'TRP - The Reality Project' },
+  //     { value: 'Mic & Mentors', label: 'YouTube channel' },
+  //     { value: 'Documentary', label: 'field storytelling' },
+  //     { value: 'Impact', label: 'human-first lens' },
+  //   ],
+  //   logo: '/assets/images/logo/the-reality-project-clean.png',
+  //   logoTheme: 'dark',
+  //   palette: { from: '#181008', via: '#5c2810', to: '#08080c', accent: '#f59e0b' },
+  //   motif: 'flow',
+  // },
 ];
 
 export type Achievement = {

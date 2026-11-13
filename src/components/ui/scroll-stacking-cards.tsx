@@ -36,7 +36,6 @@ export type Project = {
 };
 
 const host = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 function ArrowUpRightIcon({ className }: { className?: string }) {
   return (
@@ -166,17 +165,17 @@ export function ProjectDeck({
   const reduce = useReducedMotion() ?? false;
   const count = projects.length;
   const { scrollYProgress } = useScroll({ target: deck, offset: ['start start', 'end end'] });
-  // Light, critically damped smoothing: follows scroll closely without overshooting
-  const progress = useSpring(scrollYProgress, { stiffness: 380, damping: 48, mass: 0.35 });
+  // Responsive spring with low mass: eliminates lag/stutter while maintaining smooth natural motion
+  const progress = useSpring(scrollYProgress, { stiffness: 300, damping: 34, mass: 0.12 });
 
   return (
     <MotionConfig reducedMotion="user">
-      {/* One screen of scroll per card; the stage stays pinned while they are dealt onto it */}
+      {/* Dynamic pacing per card; stage stays pinned while cards deal seamlessly */}
       <section
         id="deck"
         ref={deck}
         className={cn('relative w-full', className)}
-        style={{ height: `${Math.max(1, count) * 100}svh`, background: ground }}
+        style={{ height: `${Math.max(1, count) * 94}svh`, background: ground }}
         aria-label="Featured Productions Deck"
       >
         {/* Subtle ambient crimson stage glow matching site theme */}
@@ -187,7 +186,7 @@ export function ProjectDeck({
           <div className="h-[60vh] w-full bg-[radial-gradient(60%_50%_at_50%_15%,rgba(229,19,43,0.10),transparent_70%)]" />
         </div>
 
-        <div className="sticky top-0 grid h-[100svh] place-items-center overflow-x-clip px-3 [perspective:1800px] sm:px-6 lg:px-10">
+        <div className="sticky top-0 grid h-[100svh] place-items-center overflow-x-clip px-2.5 [perspective:1800px] sm:px-6 lg:px-10">
           {/* Interactive tilted crimson studio box-grid backdrop */}
           <SectionGridBackdrop
             color="#e5132b"
@@ -200,11 +199,11 @@ export function ProjectDeck({
           />
 
           {/* Top section kicker floating above the dealt deck */}
-          <div className="pointer-events-none absolute inset-x-0 top-5 z-10 flex justify-center sm:top-7">
-            <p className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.34em] text-mist/80 sm:text-[11px]">
-              <span className="h-px w-6 bg-crimson" />
+          <div className="pointer-events-none absolute inset-x-0 top-3.5 sm:top-5 z-10 flex justify-center">
+            <p className="flex items-center gap-2.5 sm:gap-3 text-[9.5px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] sm:tracking-[0.34em] text-mist/80">
+              <span className="h-px w-4 sm:w-6 bg-crimson" />
               Featured Productions · 3D Interactive Deck
-              <span className="h-px w-6 bg-crimson" />
+              <span className="h-px w-4 sm:w-6 bg-crimson" />
             </p>
           </div>
 
@@ -227,14 +226,20 @@ export function ProjectDeck({
   );
 }
 
-const easeOut = (t: number) => 1 - (1 - t) ** 3;
-const ENTER = 0.72; // share of each card's screen spent arriving; the rest it rests in place
-
-/** How far card `j` has arrived (0 below the window, 1 landed) at deck progress `v`. */
+/**
+ * Continuous segmented arrival timing:
+ * Eliminates dead scroll gaps so Card 1 arrives cleanly between 0.02 and 0.44,
+ * and Card 2 (3rd slide) starts arriving smoothly at 0.46 and settles by 0.88 without delay.
+ */
 function arrived(j: number, v: number, count: number) {
   if (j <= 0) return 1;
   const span = Math.max(1, count - 1);
-  return easeOut(clamp01((v * span - (j - 1)) / ENTER));
+  const segStart = (j - 1) / span;
+  const segLength = 1 / span;
+  const start = segStart + segLength * 0.03;
+  const end = segStart + segLength * 0.88;
+  const t = Math.max(0, Math.min(1, (v - start) / (end - start)));
+  return 1 - Math.pow(1 - t, 2.5);
 }
 
 function Card({
@@ -255,30 +260,6 @@ function Card({
   onOpenProject?: (project: PortfolioProject) => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const fine = useFinePointer();
-  const reduced = useReducedMotionPref();
-  const activeMouse = fine && !reduced;
-
-  // Mouse tilt variables for card-level subtle perspective
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const tiltSpring = { stiffness: 180, damping: 24, mass: 0.5 };
-  const cardRotateX = useSpring(useTransform(my, [0, 1], [4, -4]), tiltSpring);
-  const cardRotateY = useSpring(useTransform(mx, [0, 1], [-5, 5]), tiltSpring);
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!activeMouse || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    mx.set(Math.max(0, Math.min(1, x)));
-    my.set(Math.max(0, Math.min(1, y)));
-  };
-
-  const onPointerLeave = () => {
-    mx.set(0.5);
-    my.set(0.5);
-  };
 
   // Cards currently lying on top of this one, counted smoothly
   const above = (v: number) => {
@@ -287,38 +268,36 @@ function Card({
     return Math.min(3, n);
   };
 
-  const scrollY = useTransform(progress, (v) => `${(1 - arrived(i, v, count)) * 108 - above(v) * 5}svh`);
-  const scrollRotateX = useTransform(progress, (v) => -(1 - arrived(i, v, count)) * 30 + above(v) * 5);
-  const scale = useTransform(progress, (v) => 0.9 + 0.1 * arrived(i, v, count) - above(v) * 0.05);
-  const filter = useTransform(
-    progress,
-    (v) => `blur(${((1 - arrived(i, v, count)) ** 2 * 12 + above(v) * 1.1).toFixed(2)}px)`,
-  );
-  const dim = useTransform(progress, (v) => above(v) * 0.22);
+  const scrollY = useTransform(progress, (v) => `${(1 - arrived(i, v, count)) * 105 - above(v) * 4}svh`);
+  const scrollRotateX = useTransform(progress, (v) => -(1 - arrived(i, v, count)) * 14 + above(v) * 3);
+  const scale = useTransform(progress, (v) => 0.94 + 0.06 * arrived(i, v, count) - above(v) * 0.04);
+  const opacity = useTransform(progress, (v) => {
+    if (i === 0) return 1;
+    const arr = arrived(i, v, count);
+    return arr < 0.01 ? 0 : Math.min(1, arr * 2.8);
+  });
+  const dim = useTransform(progress, (v) => above(v) * 0.28);
   const stillY = useTransform(progress, (v) => (arrived(i, v, count) >= 0.5 ? '0svh' : '110svh'));
 
   return (
     <motion.article
       ref={cardRef}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
       aria-label={`${p.name}: ${p.summary}`}
-      className="relative col-start-1 row-start-1 mt-[6svh] sm:mt-[7.5svh] w-[min(100%,calc(80svh*16/9),1380px)] origin-[50%_25%] will-change-[transform,filter] max-sm:w-full [transform-style:preserve-3d]"
+      className="relative col-start-1 row-start-1 mt-[4svh] sm:mt-[6.5svh] w-[min(100%,calc(80svh*16/9),1380px)] origin-[50%_25%] will-change-transform max-sm:w-full [transform-style:preserve-3d]"
       style={{
         zIndex: i + 1,
+        opacity: still ? (arrived(i, progress.get(), count) >= 0.5 ? 1 : 0) : opacity,
         ...(still
           ? { y: stillY }
           : {
             y: scrollY,
-            rotateX: activeMouse ? cardRotateX : scrollRotateX,
-            rotateY: activeMouse ? cardRotateY : 0,
+            rotateX: scrollRotateX,
             scale,
-            filter,
           }),
       }}
     >
       <div
-        className="relative overflow-hidden rounded-[26px] ring-1 ring-white/20 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.95)] transition-all duration-300"
+        className="relative overflow-hidden rounded-[20px] sm:rounded-[26px] ring-1 ring-white/20 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.95)] transition-all duration-300"
         style={{ background: ground }}
       >
         {p.image ? (
@@ -424,13 +403,13 @@ function SlideMascot({ index }: { index: number }) {
 
   if (index === 0) {
     // Slide 1: Character 1 - Sitting down, waving hand
-    // In 1.png (1024x1024), the horizontal seat line is at y = 625px (61.0%).
-    // Moving up by 61% (translateY(-61%)) anchors her seat line with sub-pixel precision directly on the card's top border.
-    // Upgraded sizing (w-44 / sm:w-60 / lg:w-80) with soft rim backlight ensures full head & hair dome visibility.
+    // In 1.png (1024x1024), horizontal seat line is at y = 625px (61.0%).
+    // Anchored with translateY(-61%) directly on the card's top border.
+    // hidden sm:block ensures pristine mobile spacing without colliding with fixed headers.
     return (
       <div
         aria-hidden
-        className="pointer-events-none absolute z-30 select-none right-1 sm:right-3 lg:right-6 w-44 sm:w-60 lg:w-80 will-change-transform"
+        className="hidden sm:block pointer-events-none absolute z-30 select-none right-1 sm:right-3 lg:right-6 w-44 sm:w-60 lg:w-80 will-change-transform"
         style={{
           top: 0,
           transform: 'translateY(-61%) translateZ(65px)',
@@ -457,7 +436,7 @@ function SlideMascot({ index }: { index: number }) {
     return (
       <div
         aria-hidden
-        className="pointer-events-none absolute z-30 select-none right-2 sm:right-4 lg:right-8 w-48 sm:w-64 lg:w-84 will-change-transform"
+        className="hidden sm:block pointer-events-none absolute z-30 select-none right-2 sm:right-4 lg:right-8 w-48 sm:w-64 lg:w-84 will-change-transform"
         style={{
           top: 0,
           transform: 'translateY(-93%) translateZ(65px)',
@@ -481,12 +460,10 @@ function SlideMascot({ index }: { index: number }) {
 
   if (index === 2) {
     // Slide 3: Character 3 - Sitting with film clapperboard & thumbs up
-    // In 3.png (1792x2400), the horizontal seat line is at y = 1657px (69.04%).
-    // Moving up by 69% (translateY(-69%)) anchors her seat line with sub-pixel precision directly on Slide 3's top border.
     return (
       <div
         aria-hidden
-        className="pointer-events-none absolute z-30 select-none right-1 sm:right-3 lg:right-4 w-36 sm:w-48 lg:w-60 will-change-transform"
+        className="hidden sm:block pointer-events-none absolute z-30 select-none right-1 sm:right-3 lg:right-4 w-36 sm:w-48 lg:w-60 will-change-transform"
         style={{
           top: 0,
           transform: 'translateY(-69%) translateZ(65px)',
@@ -528,11 +505,11 @@ function SlideFrame({ index, project }: { index: number; project: PortfolioProje
 /** SLIDE 1: TWO JOURNEYS • ONE SHARED BRAND — The Birth of Career HQ (PDF Page 3 & 4) */
 function Slide1CareerHQ({ project }: { project: PortfolioProject }) {
   return (
-    <div className="relative aspect-[16/9] min-h-[580px] lg:min-h-[630px] max-h-[84svh] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:min-h-[740px]">
+    <div className="relative aspect-[16/9] h-[80svh] min-h-[500px] sm:min-h-[560px] lg:min-h-[620px] max-h-[760px] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:h-[83svh] max-sm:min-h-[480px] max-sm:max-h-[660px]">
       <ProjectArt project={project} />
 
       {/* Chrome header */}
-      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-5 py-2.5 backdrop-blur-md sm:px-7 pr-28 sm:pr-40 lg:pr-56">
+      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-3.5 py-2 sm:px-7 sm:py-2.5 backdrop-blur-md pr-24 sm:pr-40 lg:pr-56">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff3d5a] shadow-[0_0_10px_#ff3d5a]" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -550,72 +527,72 @@ function Slide1CareerHQ({ project }: { project: PortfolioProject }) {
       </div>
 
       {/* Main body */}
-      <div className="relative z-[1] flex h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-5 sm:p-7 lg:p-9">
-        <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
+      <div className="relative z-[1] flex h-[calc(100%-40px)] sm:h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-3.5 sm:p-7 lg:p-9">
+        <div className="grid gap-4 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
           {/* Left Column: The Narrative & 6 Pillars */}
           <div>
-            <p className="mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#ff3d5a]">
+            <p className="mb-1.5 sm:mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#ff3d5a]">
               <span className="inline-block h-2 w-2 rounded-full bg-[#ff3d5a] shadow-[0_0_8px_#ff3d5a]" />
               TWO JOURNEYS • ONE SHARED BRAND
             </p>
-            <h3 className="font-display text-[clamp(2rem,3.6vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
+            <h3 className="font-display text-[clamp(1.7rem,3.4vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
               THE BIRTH OF CAREER HQ
             </h3>
 
             {/* Streamlined Hero Narrative */}
-            <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-bone/90">
+            <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-bone/90">
               Founded by <strong className="text-bone font-semibold">Benita Samson</strong> on <span className="text-[#ff3d5a] font-medium">15 October 2025</span>, uniting educational expertise under one shared brand to connect students with educational opportunities, career pathways, and institutional partnerships across India and worldwide.
             </p>
 
             {/* 6 Pillars Compact Grid */}
-            <div className="mt-3.5 pt-3 border-t border-white/10">
-              <div className="flex items-center justify-between pb-1.5 mb-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff3d5a]">
+            <div className="mt-3 pt-2.5 border-t border-white/10">
+              <div className="flex items-center justify-between pb-1 mb-1">
+                <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff3d5a]">
                   6 CORE AREAS OF WORK
                 </p>
-                <span className="text-[10px] text-mist/80 font-medium">Education &amp; Opportunities</span>
+                <span className="text-[9.5px] sm:text-[10px] text-mist/80 font-medium">Education &amp; Opportunities</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 {CAREER_HQ_AREAS.map((area) => (
                   <div
                     key={area.title}
-                    className="group/pill rounded-lg border border-white/10 bg-black/45 p-2 backdrop-blur-md transition-all duration-300 hover:border-[#ff3d5a]/60 hover:bg-[#ff3d5a]/10"
+                    className="group/pill rounded-lg border border-white/10 bg-black/45 p-1.5 sm:p-2 backdrop-blur-md transition-all duration-300 hover:border-[#ff3d5a]/60 hover:bg-[#ff3d5a]/10"
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#ff3d5a] group-hover/pill:text-bone">
+                    <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-[#ff3d5a] group-hover/pill:text-bone">
                       {area.title}
                     </p>
-                    <p className="mt-0.5 line-clamp-1 text-[9px] text-mist">{area.desc}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[8.5px] sm:text-[9px] text-mist">{area.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* First-Year Expansion One-Line Badge */}
-            <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+            <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2.5 py-1.5 sm:px-3 sm:py-2 backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-[#ff3d5a] shrink-0 animate-pulse" />
-              <p className="text-[10.5px] leading-snug text-mist">
+              <p className="text-[9.5px] sm:text-[10.5px] leading-snug text-mist">
                 <strong className="text-bone font-medium">First-Year Milestone:</strong> Rapid expansion across domestic &amp; global admissions, training &amp; placement, loan &amp; scholarship support with lasting institutional relationships.
               </p>
             </div>
           </div>
 
-          {/* Right Column: 3D Interactive Global Shield & Compass (Tilts with cursor!) */}
+          {/* Right Column: 3D Interactive Global Shield & Compass */}
           <div className="flex items-center justify-center">
-            <Interactive3DStage maxTilt={22} accent="#ff3d5a" className="w-full max-w-[420px] min-h-[350px] flex items-center justify-center">
-              {/* Layer 1: Ambient Halo & Rotating Orbital Rings (Z: 0px) */}
+            <Interactive3DStage maxTilt={20} accent="#ff3d5a" className="w-full max-w-[420px] min-h-[160px] sm:min-h-[350px] flex items-center justify-center max-sm:scale-80 max-sm:my-1">
+              {/* Layer 1: Ambient Halo & Rotating Orbital Rings */}
               <div style={{ transform: 'translateZ(0px)' }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="h-64 w-64 rounded-full bg-gradient-to-tr from-[#ff3d5a]/25 via-[#e5132b]/15 to-transparent blur-2xl" />
-                <svg viewBox="0 0 320 320" className="absolute h-72 w-72 animate-[spin_60s_linear_infinite] opacity-40">
+                <div className="h-44 sm:h-64 w-44 sm:w-64 rounded-full bg-gradient-to-tr from-[#ff3d5a]/25 via-[#e5132b]/15 to-transparent blur-2xl" />
+                <svg viewBox="0 0 320 320" className="absolute h-52 sm:h-72 w-52 sm:w-72 animate-[spin_60s_linear_infinite] opacity-40">
                   <circle cx="160" cy="160" r="140" fill="none" stroke="#ff3d5a" strokeWidth="1.2" strokeDasharray="6 8" />
                   <circle cx="160" cy="160" r="115" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="3 14" opacity="0.4" />
                 </svg>
               </div>
 
-              {/* Layer 2: 3D Glass Shield Sculpture (Z: 40px) */}
+              {/* Layer 2: 3D Glass Shield Sculpture */}
               <div style={{ transform: 'translateZ(40px)', transformStyle: 'preserve-3d' }} className="relative z-10 flex flex-col items-center">
-                <div className="relative flex h-56 w-48 items-center justify-center rounded-2xl border-2 border-[#ff3d5a]/60 bg-gradient-to-b from-[#2a0610]/95 via-[#1a040b]/95 to-[#0b0710]/98 shadow-[0_30px_70px_-15px_rgba(229,19,43,0.55),inset_0_1px_3px_rgba(255,255,255,0.4)] backdrop-blur-xl">
+                <div className="relative flex h-40 w-36 sm:h-56 sm:w-48 items-center justify-center rounded-2xl border-2 border-[#ff3d5a]/60 bg-gradient-to-b from-[#2a0610]/95 via-[#1a040b]/95 to-[#0b0710]/98 shadow-[0_30px_70px_-15px_rgba(229,19,43,0.55),inset_0_1px_3px_rgba(255,255,255,0.4)] backdrop-blur-xl">
                   {/* Shield emblem geometry */}
-                  <svg viewBox="0 0 120 160" className="h-36 w-32 text-[#ff3d5a] drop-shadow-[0_0_15px_rgba(255,61,90,0.6)]">
+                  <svg viewBox="0 0 120 160" className="h-28 w-24 sm:h-36 sm:w-32 text-[#ff3d5a] drop-shadow-[0_0_15px_rgba(255,61,90,0.6)]">
                     <defs>
                       <linearGradient id="shieldGrad1" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stopColor="#ff5773" />
@@ -626,43 +603,43 @@ function Slide1CareerHQ({ project }: { project: PortfolioProject }) {
                     <path d="M60 26 L96 42 V84 C96 116 78 134 60 142 C42 134 24 116 24 84 V42 Z" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.5" />
                     <path d="M42 80 L54 92 L78 64" fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <div className="absolute -bottom-3 rounded-full border border-[#ff3d5a]/70 bg-black/90 px-3.5 py-1 text-[10px] font-bold tracking-widest text-bone shadow-[0_0_15px_rgba(255,61,90,0.4)]">
+                  <div className="absolute -bottom-2.5 sm:-bottom-3 rounded-full border border-[#ff3d5a]/70 bg-black/90 px-2.5 sm:px-3.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold tracking-widest text-bone shadow-[0_0_15px_rgba(255,61,90,0.4)]">
                     CAREER HQ
                   </div>
                 </div>
               </div>
 
-              {/* Layer 3: Floating 3D Holographic Badges (Z: 75px) */}
+              {/* Layer 3: Floating 3D Holographic Badges */}
               <motion.div
                 style={{ transform: 'translateZ(75px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-2 -left-4 z-20 rounded-xl border border-white/20 bg-black/90 px-3.5 py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                className="absolute top-0 -left-2 sm:top-2 sm:-left-4 z-20 rounded-xl border border-white/20 bg-black/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md max-sm:scale-85"
               >
-                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#ff3d5a]">
-                  <span className="h-2 w-2 rounded-full bg-[#ff3d5a] animate-pulse" />
+                <p className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#ff3d5a]">
+                  <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#ff3d5a] animate-pulse" />
                   15 Oct 2025 • Shared Brand
                 </p>
-                <p className="mt-0.5 text-[10px] text-bone/80">Benita Samson &amp; Gandhi</p>
+                <p className="mt-0.5 text-[9px] sm:text-[10px] text-bone/80">Benita Samson &amp; Gandhi</p>
               </motion.div>
 
               <motion.div
                 style={{ transform: 'translateZ(85px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, 6, 0] }}
                 transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-                className="absolute -bottom-2 -right-4 z-20 rounded-xl border border-white/20 bg-black/90 px-3.5 py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                className="absolute -bottom-2 -right-2 sm:-bottom-2 sm:-right-4 z-20 rounded-xl border border-white/20 bg-black/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md max-sm:scale-85"
               >
-                <p className="text-[10px] font-bold uppercase tracking-wider text-bone">
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-bone">
                   6 Strategic Pillars
                 </p>
-                <p className="text-[10px] text-mist">India &amp; Global Admissions</p>
+                <p className="text-[9px] sm:text-[10px] text-mist">India &amp; Global Admissions</p>
               </motion.div>
             </Interactive3DStage>
           </div>
         </div>
 
         {/* Bottom metrics row */}
-        <div className="grid max-w-[calc(100%-180px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4">
+        <div className="grid max-w-[calc(100%-130px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2.5 pt-2 sm:pt-4">
           <MetricBadge value="15 OCT" label="2025 Brand Launch" accent="#ff3d5a" />
           <MetricBadge value="6 PILLARS" label="Core Service Areas" accent="#ff3d5a" />
           <MetricBadge value="8 → 15" label="Team Growth Vision" accent="#ff3d5a" />
@@ -676,11 +653,11 @@ function Slide1CareerHQ({ project }: { project: PortfolioProject }) {
 /** SLIDE 2: INSTAGRAM • PERSONAL BRAND — Career with Beni (PDF Page 4) */
 function Slide2CareerWithBeni({ project }: { project: PortfolioProject }) {
   return (
-    <div className="relative aspect-[16/9] min-h-[580px] lg:min-h-[630px] max-h-[84svh] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:min-h-[740px]">
+    <div className="relative aspect-[16/9] h-[80svh] min-h-[500px] sm:min-h-[560px] lg:min-h-[620px] max-h-[760px] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:h-[83svh] max-sm:min-h-[480px] max-sm:max-h-[660px]">
       <ProjectArt project={project} />
 
       {/* Chrome header */}
-      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-5 py-2.5 backdrop-blur-md sm:px-7 pr-28 sm:pr-40 lg:pr-56">
+      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-3.5 py-2 sm:px-7 sm:py-2.5 backdrop-blur-md pr-24 sm:pr-40 lg:pr-56">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ffb547] shadow-[0_0_10px_#ffb547]" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -698,40 +675,40 @@ function Slide2CareerWithBeni({ project }: { project: PortfolioProject }) {
       </div>
 
       {/* Main body */}
-      <div className="relative z-[1] flex h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-5 sm:p-7 lg:p-9">
-        <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
+      <div className="relative z-[1] flex h-[calc(100%-40px)] sm:h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-3.5 sm:p-7 lg:p-9">
+        <div className="grid gap-4 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
           {/* Left Column: Story & Narrative */}
           <div>
-            <p className="mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#ffb547]">
+            <p className="mb-1.5 sm:mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#ffb547]">
               <span className="inline-block h-2 w-2 rounded-full bg-[#ffb547] shadow-[0_0_8px_#ffb547]" />
               INSTAGRAM • PERSONAL BRAND
             </p>
-            <h3 className="font-display text-[clamp(2rem,3.6vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
+            <h3 className="font-display text-[clamp(1.7rem,3.4vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
               CAREER WITH BENI
             </h3>
 
             {/* Streamlined Hero Narrative */}
-            <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-bone/90">
+            <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-bone/90">
               Launched on <span className="text-[#ffb547] font-semibold">12 February 2026</span>, <strong className="text-bone font-medium">Career with Beni</strong> is Benita&apos;s digital platform created to share knowledge, inspire individuals, and build meaningful mentorship connections with students and aspiring professionals worldwide.
             </p>
 
             {/* 2 Key Milestone Cards (Visual Stats) */}
-            <div className="mt-3.5 grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-white/10 bg-black/45 p-2.5 backdrop-blur-md">
-                <p className="font-display text-xl sm:text-2xl font-bold text-bone tracking-tight">50,000+</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#ffb547]">INSTAGRAM FOLLOWERS</p>
-                <p className="mt-0.5 text-[9.5px] text-mist">Approx. 6-Month Milestone</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-white/10 bg-black/45 p-2 sm:p-2.5 backdrop-blur-md">
+                <p className="font-display text-lg sm:text-2xl font-bold text-bone tracking-tight">50,000+</p>
+                <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-[#ffb547]">INSTAGRAM FOLLOWERS</p>
+                <p className="mt-0.5 text-[8.5px] sm:text-[9.5px] text-mist">Approx. 6-Month Milestone</p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/45 p-2.5 backdrop-blur-md">
-                <p className="font-display text-xl sm:text-2xl font-bold text-bone tracking-tight">120+</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#ffb547]">VIDEOS PUBLISHED</p>
-                <p className="mt-0.5 text-[9.5px] text-mist">Consistent Reels &amp; Guidance</p>
+              <div className="rounded-xl border border-white/10 bg-black/45 p-2 sm:p-2.5 backdrop-blur-md">
+                <p className="font-display text-lg sm:text-2xl font-bold text-bone tracking-tight">120+</p>
+                <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-[#ffb547]">VIDEOS PUBLISHED</p>
+                <p className="mt-0.5 text-[8.5px] sm:text-[9.5px] text-mist">Consistent Reels &amp; Guidance</p>
               </div>
             </div>
 
             {/* Tags row */}
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
               {[
                 'Digital Mentorship',
                 'Instagram Reels',
@@ -741,7 +718,7 @@ function Slide2CareerWithBeni({ project }: { project: PortfolioProject }) {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/10 bg-black/40 px-2.5 py-0.5 text-[10.5px] font-medium text-bone/90 backdrop-blur"
+                  className="rounded-full border border-white/10 bg-black/40 px-2 sm:px-2.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-medium text-bone/90 backdrop-blur"
                 >
                   {tag}
                 </span>
@@ -749,86 +726,86 @@ function Slide2CareerWithBeni({ project }: { project: PortfolioProject }) {
             </div>
 
             {/* Core Mission Callout */}
-            <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-white/10 bg-black/45 px-3 py-2 backdrop-blur-sm">
+            <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2.5 py-1.5 sm:px-3 sm:py-2 backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-[#ffb547] shrink-0 animate-pulse" />
-              <p className="text-[10.5px] leading-snug text-mist">
+              <p className="text-[9.5px] sm:text-[10.5px] leading-snug text-mist">
                 <strong className="text-bone font-medium">Community Impact:</strong> Built on genuine mentorship and consistent content, empowering thousands of students across India and internationally.
               </p>
             </div>
           </div>
 
-          {/* Right Column: 3D Interactive Instagram Holographic Studio & Gold Trophy (Tilts with cursor!) */}
+          {/* Right Column: 3D Interactive Instagram Holographic Studio & Gold Trophy */}
           <div className="flex items-center justify-center">
-            <Interactive3DStage maxTilt={22} accent="#ffb547" className="w-full max-w-[420px] min-h-[350px] flex items-center justify-center">
-              {/* Layer 1: Warm Golden Halo (Z: 0px) */}
+            <Interactive3DStage maxTilt={20} accent="#ffb547" className="w-full max-w-[420px] min-h-[160px] sm:min-h-[350px] flex items-center justify-center max-sm:scale-80 max-sm:my-1">
+              {/* Layer 1: Warm Golden Halo */}
               <div style={{ transform: 'translateZ(0px)' }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="h-64 w-64 rounded-full bg-gradient-to-tr from-[#ffb547]/25 via-[#d97706]/15 to-transparent blur-2xl" />
-                <svg viewBox="0 0 320 320" className="absolute h-72 w-72 animate-[spin_50s_linear_infinite] opacity-35">
+                <div className="h-44 sm:h-64 w-44 sm:w-64 rounded-full bg-gradient-to-tr from-[#ffb547]/25 via-[#d97706]/15 to-transparent blur-2xl" />
+                <svg viewBox="0 0 320 320" className="absolute h-52 sm:h-72 w-52 sm:w-72 animate-[spin_50s_linear_infinite] opacity-35">
                   <circle cx="160" cy="160" r="140" fill="none" stroke="#ffb547" strokeWidth="1.2" strokeDasharray="4 10" />
                 </svg>
               </div>
 
-              {/* Layer 2: 3D Creator Smartphone Frame (Z: 35px) */}
+              {/* Layer 2: 3D Creator Smartphone Frame */}
               <div style={{ transform: 'translateZ(35px)', transformStyle: 'preserve-3d' }} className="relative z-10 flex flex-col items-center">
-                <div className="relative w-56 rounded-[28px] border-2 border-white/25 bg-gradient-to-b from-[#1c1208]/95 to-[#0b0805]/98 p-3.5 shadow-[0_30px_70px_-15px_rgba(217,119,6,0.5),inset_0_1px_3px_rgba(255,255,255,0.4)] backdrop-blur-xl">
+                <div className="relative w-44 sm:w-56 rounded-[22px] sm:rounded-[28px] border-2 border-white/25 bg-gradient-to-b from-[#1c1208]/95 to-[#0b0805]/98 p-2.5 sm:p-3.5 shadow-[0_30px_70px_-15px_rgba(217,119,6,0.5),inset_0_1px_3px_rgba(255,255,255,0.4)] backdrop-blur-xl">
                   {/* Top Phone speaker notch */}
-                  <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-white/20" />
+                  <div className="mx-auto mb-2.5 sm:mb-3 h-1.5 w-12 sm:w-14 rounded-full bg-white/20" />
                   {/* Profile Bar */}
-                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-black/50 p-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#f58529] via-[#dd2a7b] to-[#8134af] p-0.5 shadow-md">
-                      <div className="h-full w-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-bone">
+                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/50 p-1.5 sm:p-2">
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-tr from-[#f58529] via-[#dd2a7b] to-[#8134af] p-0.5 shadow-md shrink-0">
+                      <div className="h-full w-full rounded-full bg-black flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-bone">
                         B
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-[11px] font-bold text-bone flex items-center gap-1">
+                      <p className="truncate text-[10px] sm:text-[11px] font-bold text-bone flex items-center gap-1">
                         careerwithbeni
-                        <span className="text-[#38bdf8] text-[10px]">✓</span>
+                        <span className="text-[#38bdf8] text-[9px] sm:text-[10px]">✓</span>
                       </p>
-                      <p className="text-[9px] text-mist truncate">Benita Samson</p>
+                      <p className="text-[8.5px] sm:text-[9px] text-mist truncate">Benita Samson</p>
                     </div>
                   </div>
                   {/* Screen Preview Graphic */}
-                  <div className="mt-2.5 flex h-24 items-center justify-center rounded-xl bg-gradient-to-br from-[#2a1705] to-[#120a02] border border-[#ffb547]/30 relative overflow-hidden">
+                  <div className="mt-2 sm:mt-2.5 flex h-20 sm:h-24 items-center justify-center rounded-xl bg-gradient-to-br from-[#2a1705] to-[#120a02] border border-[#ffb547]/30 relative overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,181,71,0.25),transparent_70%)]" />
                     <div className="relative text-center px-2">
-                      <p className="text-xs font-bold text-bone">Knowledge · Mentorship</p>
-                      <p className="text-[10px] text-[#ffb547] font-semibold mt-0.5">120+ Published Videos</p>
+                      <p className="text-[11px] sm:text-xs font-bold text-bone">Knowledge · Mentorship</p>
+                      <p className="text-[9.5px] sm:text-[10px] text-[#ffb547] font-semibold mt-0.5">120+ Published Videos</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Layer 3: Floating 3D Gold Milestone Badge (Z: 85px) */}
+              {/* Layer 3: Floating 3D Gold Milestone Badge */}
               <motion.div
                 style={{ transform: 'translateZ(85px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -bottom-3 -left-4 z-20 rounded-2xl border-2 border-[#ffb547]/70 bg-gradient-to-b from-[#1a1205] to-[#0c0803] p-4 shadow-[0_25px_50px_rgba(0,0,0,0.85),0_0_25px_rgba(255,181,71,0.25)] backdrop-blur-xl"
+                className="absolute -bottom-2 -left-2 sm:-bottom-3 sm:-left-4 z-20 rounded-xl sm:rounded-2xl border-2 border-[#ffb547]/70 bg-gradient-to-b from-[#1a1205] to-[#0c0803] p-2.5 sm:p-4 shadow-[0_25px_50px_rgba(0,0,0,0.85),0_0_25px_rgba(255,181,71,0.25)] backdrop-blur-xl max-sm:scale-85"
               >
-                <div className="flex items-baseline gap-2">
-                  <span className="font-display text-4xl sm:text-5xl leading-none text-bone tracking-tight">50,000+</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#ffb547]">FOLLOWERS</span>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="font-display text-2xl sm:text-5xl leading-none text-bone tracking-tight">50,000+</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#ffb547]">FOLLOWERS</span>
                 </div>
-                <p className="mt-1 text-[10px] font-medium text-mist">Approx. Six-Month Milestone</p>
+                <p className="mt-0.5 sm:mt-1 text-[8.5px] sm:text-[10px] font-medium text-mist">Approx. Six-Month Milestone</p>
               </motion.div>
 
-              {/* Layer 4: Floating Reels Icon (Z: 95px) */}
+              {/* Layer 4: Floating Reels Icon */}
               <motion.div
                 style={{ transform: 'translateZ(95px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                className="absolute -top-3 -right-3 z-20 flex items-center gap-1.5 rounded-full border border-white/25 bg-black/90 px-3.5 py-1.5 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 z-20 flex items-center gap-1.5 rounded-full border border-white/25 bg-black/90 px-2.5 py-1 sm:px-3.5 sm:py-1.5 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-md max-sm:scale-85"
               >
-                <span className="h-2 w-2 rounded-full bg-[#ffb547] animate-ping" />
-                <span className="text-[10px] font-bold tracking-wider text-bone">120+ REELS</span>
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#ffb547] animate-ping" />
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-wider text-bone">120+ REELS</span>
               </motion.div>
             </Interactive3DStage>
           </div>
         </div>
 
         {/* Bottom metrics row */}
-        <div className="grid max-w-[calc(100%-180px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4">
+        <div className="grid max-w-[calc(100%-130px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2.5 pt-2 sm:pt-4">
           <MetricBadge value="50,000+" label="Instagram Followers" accent="#ffb547" />
           <MetricBadge value="120+" label="Videos Published" accent="#ffb547" />
           <MetricBadge value="12 FEB" label="2026 Launch Date" accent="#ffb547" />
@@ -842,11 +819,11 @@ function Slide2CareerWithBeni({ project }: { project: PortfolioProject }) {
 /** SLIDE 3: UPCOMING • YOUTUBE — Media & Content Ventures (PDF Page 4) */
 function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
   return (
-    <div className="relative aspect-[16/9] min-h-[580px] lg:min-h-[630px] max-h-[84svh] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:min-h-[740px]">
+    <div className="relative aspect-[16/9] h-[80svh] min-h-[500px] sm:min-h-[560px] lg:min-h-[620px] max-h-[760px] w-full overflow-hidden bg-ink-2 select-none max-sm:aspect-auto max-sm:h-[83svh] max-sm:min-h-[480px] max-sm:max-h-[660px]">
       <ProjectArt project={project} />
 
       {/* Chrome header */}
-      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-5 py-2.5 backdrop-blur-md sm:px-7 pr-28 sm:pr-40 lg:pr-56">
+      <div className="relative z-[1] flex items-center justify-between border-b border-white/10 bg-black/60 px-3.5 py-2 sm:px-7 sm:py-2.5 backdrop-blur-md pr-24 sm:pr-40 lg:pr-56">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-[#38bdf8] shadow-[0_0_10px_#38bdf8]" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -864,60 +841,60 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
       </div>
 
       {/* Main body */}
-      <div className="relative z-[1] flex h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-5 sm:p-7 lg:p-9">
-        <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
+      <div className="relative z-[1] flex h-[calc(100%-40px)] sm:h-[calc(100%-44px)] flex-col justify-between overflow-y-auto p-3.5 sm:p-7 lg:p-9">
+        <div className="grid gap-4 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8 items-center">
           {/* Left Column: Vision & YouTube Architecture */}
           <div>
-            <p className="mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#38bdf8]">
+            <p className="mb-1.5 sm:mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.26em] text-[#38bdf8]">
               <span className="inline-block h-2 w-2 rounded-full bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]" />
               UPCOMING • YOUTUBE
             </p>
-            <h3 className="font-display text-[clamp(2rem,3.6vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
+            <h3 className="font-display text-[clamp(1.7rem,3.4vw,3.3rem)] leading-[0.88] tracking-wide text-bone drop-shadow-md">
               MEDIA &amp; CONTENT VENTURES
             </h3>
 
             {/* Streamlined Hero Narrative */}
-            <p className="mt-2.5 text-xs sm:text-[13px] leading-relaxed text-bone/90">
+            <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-bone/90">
               Expanding beyond education, Benita&apos;s media vision creates knowledge-sharing platforms to bring authentic founder journeys, industry wisdom, and overlooked stories to a wider global audience.
             </p>
 
             {/* The 2 Shows Breakdown (Side-by-Side Dual Cards) */}
-            <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="rounded-xl border border-[#38bdf8]/30 bg-black/45 p-2.5 backdrop-blur-md transition-all duration-300 hover:border-[#38bdf8]/60">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="rounded-xl border border-[#38bdf8]/30 bg-black/45 p-2 sm:p-2.5 backdrop-blur-md transition-all duration-300 hover:border-[#38bdf8]/60">
                 <div className="flex items-center justify-between">
-                  <p className="font-display text-sm sm:text-base font-bold text-bone tracking-wide">MIC &amp; MENTORS</p>
+                  <p className="font-display text-xs sm:text-base font-bold text-bone tracking-wide">MIC &amp; MENTORS</p>
                   <span className="rounded bg-[#38bdf8]/20 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-[#38bdf8]">
                     CHANNEL
                   </span>
                 </div>
-                <p className="mt-1 text-[10px] leading-relaxed text-mist">
+                <p className="mt-1 text-[9.5px] sm:text-[10px] leading-relaxed text-mist">
                   Flagship interview-led channel featuring founders, CEOs, and industry leaders sharing practical insights.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/45 p-2.5 backdrop-blur-md transition-all duration-300 hover:border-white/20">
+              <div className="rounded-xl border border-white/10 bg-black/45 p-2 sm:p-2.5 backdrop-blur-md transition-all duration-300 hover:border-white/20">
                 <div className="flex items-center justify-between">
-                  <p className="font-display text-sm sm:text-base font-bold text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
+                  <p className="font-display text-xs sm:text-base font-bold text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
                   <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-bone/80">
                     SHOW
                   </span>
                 </div>
-                <p className="mt-1 text-[10px] leading-relaxed text-mist">
+                <p className="mt-1 text-[9.5px] sm:text-[10px] leading-relaxed text-mist">
                   Documentary show concept spotlighting real people, overlooked professions, and everyday narratives.
                 </p>
               </div>
             </div>
 
             {/* Architecture Clarity Badge (Key PDF Requirement) */}
-            <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-[#38bdf8]/30 bg-black/45 px-3 py-2 backdrop-blur-sm shadow-[0_0_15px_rgba(56,189,248,0.1)]">
+            <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-[#38bdf8]/30 bg-black/45 px-2.5 py-1.5 sm:px-3 sm:py-2 backdrop-blur-sm shadow-[0_0_15px_rgba(56,189,248,0.1)]">
               <span className="h-2 w-2 rounded-full bg-[#38bdf8] shrink-0 animate-pulse" />
-              <p className="text-[10.5px] leading-snug text-mist">
+              <p className="text-[9.5px] sm:text-[10.5px] leading-snug text-mist">
                 <strong className="text-bone font-medium">Channel Architecture:</strong> <span className="text-[#38bdf8]">Mic &amp; Mentors</span> is the upcoming YouTube channel. <span className="text-bone">TRP - The Reality Project</span> is a separate show within the channel (not a second channel).
               </p>
             </div>
 
             {/* Tags row */}
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
               {[
                 'YouTube Channel',
                 'Mic & Mentors',
@@ -927,7 +904,7 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/10 bg-black/40 px-2.5 py-0.5 text-[10.5px] font-medium text-bone/90 backdrop-blur"
+                  className="rounded-full border border-white/10 bg-black/40 px-2 sm:px-2.5 py-0.5 text-[9.5px] sm:text-[10.5px] font-medium text-bone/90 backdrop-blur"
                 >
                   {tag}
                 </span>
@@ -935,41 +912,41 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
             </div>
           </div>
 
-          {/* Right Column: 3D Interactive Broadcast Stage & YouTube Studio (Tilts with cursor!) */}
+          {/* Right Column: 3D Interactive Broadcast Stage & YouTube Studio */}
           <div className="flex items-center justify-center">
-            <Interactive3DStage maxTilt={22} accent="#38bdf8" className="w-full max-w-[420px] min-h-[350px] flex items-center justify-center">
+            <Interactive3DStage maxTilt={20} accent="#38bdf8" className="w-full max-w-[420px] min-h-[160px] sm:min-h-[350px] flex items-center justify-center max-sm:scale-80 max-sm:my-1">
               {/* Layer 1: Electric Blue Spotlight & Studio Grid (Z: 0px) */}
               <div style={{ transform: 'translateZ(0px)' }} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="h-64 w-64 rounded-full bg-gradient-to-tr from-[#38bdf8]/25 via-[#0284c7]/15 to-transparent blur-2xl" />
-                <svg viewBox="0 0 320 320" className="absolute h-72 w-72 animate-[spin_55s_linear_infinite] opacity-35">
+                <div className="h-44 sm:h-64 w-44 sm:w-64 rounded-full bg-gradient-to-tr from-[#38bdf8]/25 via-[#0284c7]/15 to-transparent blur-2xl" />
+                <svg viewBox="0 0 320 320" className="absolute h-52 sm:h-72 w-52 sm:w-72 animate-[spin_55s_linear_infinite] opacity-35">
                   <circle cx="160" cy="160" r="140" fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="8 8" />
                 </svg>
               </div>
 
               {/* Layer 2: 3D Dual Cinema Clapper / Studio Display (Z: 40px) */}
-              <div style={{ transform: 'translateZ(40px)', transformStyle: 'preserve-3d' }} className="relative z-10 flex flex-col items-center gap-3">
+              <div style={{ transform: 'translateZ(40px)', transformStyle: 'preserve-3d' }} className="relative z-10 flex flex-col items-center gap-2 sm:gap-3">
                 {/* Clapper header */}
-                <div className="flex w-64 items-center justify-between rounded-xl border border-white/20 bg-black/85 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-xl">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_red]" />
-                    <span className="font-mono text-[10px] font-bold tracking-widest text-[#38bdf8]">REC • 4K</span>
+                <div className="flex w-52 sm:w-64 items-center justify-between rounded-xl border border-white/20 bg-black/85 p-2 sm:p-3 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_red]" />
+                    <span className="font-mono text-[9px] sm:text-[10px] font-bold tracking-widest text-[#38bdf8]">REC • 4K</span>
                   </div>
-                  <span className="font-mono text-[10px] text-mist">STUDIO PRODUCTION</span>
+                  <span className="font-mono text-[9px] sm:text-[10px] text-mist">STUDIO PRODUCTION</span>
                 </div>
 
                 {/* Production screen */}
-                <div className="relative w-64 rounded-2xl border-2 border-[#38bdf8]/40 bg-gradient-to-b from-[#081a28]/95 to-[#040c14]/98 p-4 shadow-[0_30px_70px_-15px_rgba(2,132,199,0.5)] backdrop-blur-xl">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-                    <p className="font-display text-lg text-bone tracking-wide">PODCAST</p>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">YOUTUBE</span>
+                <div className="relative w-52 sm:w-64 rounded-2xl border-2 border-[#38bdf8]/40 bg-gradient-to-b from-[#081a28]/95 to-[#040c14]/98 p-3 sm:p-4 shadow-[0_30px_70px_-15px_rgba(2,132,199,0.5)] backdrop-blur-xl">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5 sm:pb-2 mb-2 sm:mb-2.5">
+                    <p className="font-display text-base sm:text-lg text-bone tracking-wide">PODCAST</p>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">YOUTUBE</span>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-mist">Interviews with Founders, CEOs &amp; Industry Leaders</p>
+                  <p className="text-[9px] sm:text-[10px] leading-relaxed text-mist">Interviews with Founders, CEOs &amp; Industry Leaders</p>
 
-                  <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
-                    <p className="font-display text-base text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-bone/70">SHOW</span>
+                  <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-white/10 flex items-center justify-between">
+                    <p className="font-display text-sm sm:text-base text-bone tracking-wide">TRP - THE REALITY PROJECT</p>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider text-bone/70">SHOW</span>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-mist">Documentaries on Real People &amp; Overlooked Professions</p>
+                  <p className="text-[9px] sm:text-[10px] leading-relaxed text-mist">Documentaries on Real People &amp; Overlooked Professions</p>
                 </div>
               </div>
 
@@ -978,12 +955,12 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
                 style={{ transform: 'translateZ(80px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, -7, 0] }}
                 transition={{ duration: 4.4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -bottom-3 -right-3 z-20 rounded-xl border border-[#38bdf8]/50 bg-black/90 px-3.5 py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                className="absolute -bottom-2 -right-2 sm:-bottom-3 sm:-right-3 z-20 rounded-xl border border-[#38bdf8]/50 bg-black/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md max-sm:scale-85 max-sm:hidden"
               >
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
                   Channel Architecture
                 </p>
-                <p className="text-[10px] text-bone font-medium">TRP - The Reality Project is a show inside Mic &amp; Mentors</p>
+                <p className="text-[9px] sm:text-[10px] text-bone font-medium">TRP - The Reality Project is a show inside Mic &amp; Mentors</p>
               </motion.div>
 
               {/* Layer 4: Floating YouTube Play Emblem (Z: 90px) */}
@@ -991,19 +968,19 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
                 style={{ transform: 'translateZ(90px)', transformStyle: 'preserve-3d' }}
                 animate={{ y: [0, 7, 0] }}
                 transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                className="absolute -top-3 -left-3 z-20 flex items-center gap-2 rounded-full border border-white/25 bg-black/90 px-3.5 py-1.5 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md"
+                className="absolute -top-2 -left-2 sm:-top-3 sm:-left-3 z-20 flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/25 bg-black/90 px-2.5 py-1 sm:px-3.5 sm:py-1.5 shadow-[0_15px_35px_rgba(0,0,0,0.8)] backdrop-blur-md max-sm:scale-85"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5 text-red-500">
                   <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
                 </svg>
-                <span className="text-[10px] font-bold tracking-wider text-bone">UPCOMING CHANNEL</span>
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-wider text-bone">UPCOMING CHANNEL</span>
               </motion.div>
             </Interactive3DStage>
           </div>
         </div>
 
         {/* Bottom metrics row */}
-        <div className="grid max-w-[calc(100%-180px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4">
+        <div className="grid max-w-[calc(100%-130px)] sm:max-w-[calc(100%-270px)] grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2.5 pt-2 sm:pt-4">
           <MetricBadge value="YOUTUBE" label="Flagship Platform" accent="#38bdf8" />
           <MetricBadge value="LEADERS" label="Founders & CEOs" accent="#38bdf8" />
           <MetricBadge value="TRP SHOW" label="The Reality Project" accent="#38bdf8" />
@@ -1016,11 +993,11 @@ function Slide3MediaVentures({ project }: { project: PortfolioProject }) {
 
 function MetricBadge({ value, label, accent }: { value: string; label: string; accent: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/55 px-3 py-2 backdrop-blur-md shadow-sm">
-      <div className="font-display text-xl sm:text-2xl leading-none tracking-wide" style={{ color: accent }}>
+    <div className="rounded-lg sm:rounded-xl border border-white/10 bg-black/55 px-2 py-1.5 sm:px-3 sm:py-2 backdrop-blur-md shadow-sm">
+      <div className="font-display text-sm sm:text-2xl leading-none tracking-wide" style={{ color: accent }}>
         {value}
       </div>
-      <div className="mt-1 line-clamp-1 text-[10px] text-mist">{label}</div>
+      <div className="mt-0.5 line-clamp-1 text-[8.5px] sm:text-[10px] text-mist">{label}</div>
     </div>
   );
 }
@@ -1076,7 +1053,7 @@ function PortfolioPreviewFrame({ project, index }: { project: PortfolioProject; 
         </div>
 
         {/* Bottom metrics row kept clear of the right-hand cut-out notch */}
-        <div className="grid max-w-[calc(100%-170px)] grid-cols-2 gap-3 pt-4 sm:max-w-[calc(100%-260px)] sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid max-w-[calc(100%-130px)] grid-cols-2 gap-2 pt-3 sm:max-w-[calc(100%-260px)] sm:grid-cols-3 lg:grid-cols-4">
           {project.metrics.slice(0, 4).map((m) => (
             <div
               key={m.label}
@@ -1118,24 +1095,24 @@ function Visit({
   const content = (
     <>
       <span className="flex flex-col leading-tight text-left">
-        <span className="text-[14px] sm:text-[16px] font-semibold tracking-[-0.015em] text-bone">
+        <span className="text-[12px] sm:text-[16px] font-semibold tracking-[-0.015em] text-bone">
           {p.name}
         </span>
-        <span className="text-[11px] sm:text-[13px] text-mist underline-offset-4 group-hover:underline group-focus-visible:underline">
+        <span className="text-[9.5px] sm:text-[13px] text-mist underline-offset-4 group-hover:underline group-focus-visible:underline">
           {p.display ?? host(p.url)}
         </span>
       </span>
       <span
-        className="grid size-9 sm:size-11 shrink-0 place-items-center rounded-full text-white transition-transform duration-200 ease-out group-hover:rotate-45 group-active:scale-90 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 shadow-md"
+        className="grid size-7 sm:size-11 shrink-0 place-items-center rounded-full text-white transition-transform duration-200 ease-out group-hover:rotate-45 group-active:scale-90 group-focus-visible:outline-2 group-focus-visible:outline-offset-2 shadow-md"
         style={{ background: p.accent, outlineColor: p.accent }}
       >
-        <ArrowUpRightIcon className="size-4 sm:size-5" />
+        <ArrowUpRightIcon className="size-3.5 sm:size-5" />
       </span>
     </>
   );
 
   const sharedClass =
-    'group flex items-center gap-3 rounded-tl-[20px] py-2 pr-1 pl-3.5 outline-none sm:gap-4 sm:py-3 sm:pl-5';
+    'group flex items-center gap-2 sm:gap-4 rounded-tl-[16px] sm:rounded-tl-[20px] py-1.5 pr-1 pl-2.5 sm:py-3 sm:pl-5 outline-none';
 
   return (
     <div className="absolute right-0 bottom-0 z-10">

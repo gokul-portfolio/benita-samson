@@ -12,7 +12,7 @@ export default function About() {
     { k: 'Sales & Fundraising', v: 'Sales Course & Trust (Fundraising)', s: '2015 · Community fundraising & public trust' },
     { k: 'Australian Banking', v: `${education[0].score} · NAB & CBA`, s: 'Walked away to build her own path' },
     { k: 'Madurai Launch', v: experience[3]?.company ?? 'Hope Education & Migration', s: 'Feb 2025 · Founding team of 4' },
-    { k: 'Shared Brand', v: experience[1].company, s: 'Logo created 15 October 2025' },
+    { k: 'Shared Brand', v: experience[1].company, s: '' },
     { k: 'Parent Company', v: experience[0].company, s: '4 Companies: Career HQ · Industry Connect · A T O M · DNA' },
   ];
 

@@ -61,7 +61,7 @@ function Series() {
   const [activeReel, setActiveReel] = useState<VideoReel | null>(null);
   const [enquiryOpen, setEnquiryOpen] = useState(false);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
-  const hasAutoOpenedRef = useRef(false);
+  // const hasAutoOpenedRef = useRef(false);
   const [reelProgress, setReelProgress] = useState<Record<string, number>>({});
   const [toast, setToast] = useState<string | null>(null);
   const { scrollTo, lock, unlock } = useSmoothScroll();
@@ -121,6 +121,8 @@ function Series() {
   const closeReel = useCallback(() => setActiveReel(null), []);
   const closeEnquiry = useCallback(() => setEnquiryOpen(false), []);
 
+  // Auto-open Enquiry modal when scrolling to footer (Commented out per user request; opens only via header "Let's Build" button)
+  /*
   useEffect(() => {
     if (stage !== 'home' || hasAutoOpenedRef.current) return;
 
@@ -162,6 +164,7 @@ function Series() {
       io?.disconnect();
     };
   }, [stage, playing, project, resumeOpen, activeReel]);
+  */
 
   const sections: Record<SectionId, ReactNode> = {
     about: <About />,
