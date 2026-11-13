@@ -30,8 +30,8 @@ export const profile = {
   },
   resumePdf: '/assets/Benita_Samson_Founder_Portfolio.pdf',
   bannerVideo: '/assets/video/banner-video-6.webm',
-  bannerVideoFallback: '/assets/video/banner-video-4.mp4',
-  bannerAudio: '/assets/video/banner-video-3.mp4',
+  bannerVideoFallback: '/assets/video/banner-video-5.mp4',
+  bannerAudio: '/assets/video/banner-video-5.mp4',
   openingImage: '/assets/images/benita.png',
   portrait: {
     src: '/assets/images/benita.png',

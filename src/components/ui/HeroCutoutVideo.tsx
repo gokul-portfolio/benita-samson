@@ -24,7 +24,7 @@ out vec4 outColor;
 void main() {
   vec4 tex = texture(u_tex, v_uv);
   float alpha = tex.a;
-  if (alpha <= 0.01) {
+  if (alpha <= 0.005) {
     outColor = vec4(0.0);
     return;
   }
@@ -36,34 +36,19 @@ void main() {
 
   // Real-time unsharp mask sharpening + subtle clarity contrast
   vec3 blur = (up.rgb + down.rgb + left.rgb + right.rgb) * 0.25;
-  vec3 detail = clamp(tex.rgb - blur, -0.14, 0.14);
-  vec3 sharp = clamp(tex.rgb + detail * 0.52, 0.0, 1.0);
-  sharp = clamp((sharp - 0.5) * 1.05 + 0.5, 0.0, 1.0);
+  vec3 detail = clamp(tex.rgb - blur, -0.12, 0.12);
+  vec3 sharp = clamp(tex.rgb + detail * 0.48, 0.0, 1.0);
+  sharp = clamp((sharp - 0.5) * 1.04 + 0.5, 0.0, 1.0);
 
-  float minC = min(tex.r, min(tex.g, tex.b));
-  float maxC = max(tex.r, max(tex.g, tex.b));
-  float sat = maxC - minC;
-  float lum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
-
-  float minNb1 = min(min(up.a, down.a), min(left.a, right.a));
-  float aNE = texture(u_tex, v_uv + vec2( 2.2 * u_texel.x, -2.2 * u_texel.y)).a;
-  float aNW = texture(u_tex, v_uv + vec2(-2.2 * u_texel.x, -2.2 * u_texel.y)).a;
-  float aSE = texture(u_tex, v_uv + vec2( 2.2 * u_texel.x,  2.2 * u_texel.y)).a;
-  float aSW = texture(u_tex, v_uv + vec2(-2.2 * u_texel.x,  2.2 * u_texel.y)).a;
-  float minNb2 = min(min(aNE, aNW), min(aSE, aSW));
-
-  // 1. Erode bright white halo along alpha edges & 2px outer fringe without touching solid blouse interior
-  if ((alpha < 0.98 || minNb1 < 0.80 || minNb2 < 0.45) && lum > 0.64 && sat < 0.14) {
-    alpha *= smoothstep(0.84, 0.52, lum);
+  // Soft exterior edge cleanup: suppress only stray compression noise
+  // strictly outside the subject where alpha is low and surrounded by empty pixels.
+  // Never erode solid clothing or body pixels.
+  float minNb = min(min(up.a, down.a), min(left.a, right.a));
+  if (alpha < 0.40 && minNb < 0.05) {
+    alpha = smoothstep(0.06, 0.40, alpha);
   }
 
-  // 2. Key trapped white background wedges strictly above shoulders (v_uv.y < 0.39)
-  bool inProtectedFace = abs(v_uv.x - 0.5) < 0.11 && v_uv.y > 0.12 && v_uv.y < 0.37;
-  if (!inProtectedFace && v_uv.y < 0.39 && minC > 0.84 && sat < 0.06) {
-    alpha *= 1.0 - smoothstep(0.83, 0.90, minC);
-  }
-
-  if (alpha <= 0.01) {
+  if (alpha <= 0.005) {
     outColor = vec4(0.0);
     return;
   }
@@ -89,6 +74,7 @@ export default function HeroCutoutVideo({
   primarySrc,
   fallbackSrc,
   autoPlay,
+  isMuted = true,
   onClick,
   onTimeUpdate,
   onEnded,
@@ -100,8 +86,9 @@ export default function HeroCutoutVideo({
   primarySrc: string;
   fallbackSrc?: string;
   autoPlay: boolean;
+  isMuted?: boolean;
   onClick: () => void;
-  onTimeUpdate: () => void;
+  onTimeUpdate?: () => void;
   onEnded: () => void;
   cursor?: string;
   title: string;
@@ -109,6 +96,12 @@ export default function HeroCutoutVideo({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [webglReady, setWebglReady] = useState(false);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = Boolean(isMuted);
+    }
+  }, [isMuted, videoRef]);
 
   const glStateRef = useRef<{
     gl: WebGL2RenderingContext;
@@ -230,19 +223,58 @@ export default function HeroCutoutVideo({
     const ro = new ResizeObserver(syncCanvasSize);
     ro.observe(canvas);
 
-    let rafId = 0;
-    const tick = () => {
-      drawFrame();
-      if (!video.paused && !video.ended) {
-        rafId = window.requestAnimationFrame(tick);
-      } else {
-        rafId = 0;
+    let cancelCurrentLoop: (() => void) | null = null;
+
+    const stopLoop = () => {
+      if (cancelCurrentLoop) {
+        cancelCurrentLoop();
+        cancelCurrentLoop = null;
       }
     };
 
     const startLoop = () => {
-      if (!rafId) rafId = window.requestAnimationFrame(tick);
+      stopLoop();
+      let active = true;
+
+      const hasRvfc =
+        'requestVideoFrameCallback' in video &&
+        typeof (video as HTMLVideoElement & { requestVideoFrameCallback?: unknown }).requestVideoFrameCallback === 'function';
+
+      if (hasRvfc) {
+        const v = video as HTMLVideoElement & {
+          requestVideoFrameCallback: (callback: () => void) => number;
+          cancelVideoFrameCallback: (handle: number) => void;
+        };
+        let handle = 0;
+        const onFrame = () => {
+          if (!active) return;
+          drawFrame();
+          if (!video.paused && !video.ended) {
+            handle = v.requestVideoFrameCallback(onFrame);
+          }
+        };
+        handle = v.requestVideoFrameCallback(onFrame);
+        cancelCurrentLoop = () => {
+          active = false;
+          if (handle) v.cancelVideoFrameCallback(handle);
+        };
+      } else {
+        let rafId = 0;
+        const tick = () => {
+          if (!active) return;
+          drawFrame();
+          if (!video.paused && !video.ended) {
+            rafId = window.requestAnimationFrame(tick);
+          }
+        };
+        rafId = window.requestAnimationFrame(tick);
+        cancelCurrentLoop = () => {
+          active = false;
+          if (rafId) window.cancelAnimationFrame(rafId);
+        };
+      }
     };
+
     const renderOnce = () => {
       drawFrame();
     };
@@ -251,8 +283,8 @@ export default function HeroCutoutVideo({
     video.addEventListener('loadeddata', renderOnce);
     video.addEventListener('canplay', renderOnce);
     video.addEventListener('seeked', renderOnce);
-    video.addEventListener('ended', renderOnce);
-    video.addEventListener('pause', renderOnce);
+    video.addEventListener('ended', stopLoop);
+    video.addEventListener('pause', stopLoop);
 
     if (!video.paused && !video.ended) {
       startLoop();
@@ -261,14 +293,14 @@ export default function HeroCutoutVideo({
     }
 
     return () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
+      stopLoop();
       ro.disconnect();
       video.removeEventListener('play', startLoop);
       video.removeEventListener('loadeddata', renderOnce);
       video.removeEventListener('canplay', renderOnce);
       video.removeEventListener('seeked', renderOnce);
-      video.removeEventListener('ended', renderOnce);
-      video.removeEventListener('pause', renderOnce);
+      video.removeEventListener('ended', stopLoop);
+      video.removeEventListener('pause', stopLoop);
       gl.deleteTexture(tex);
       gl.deleteBuffer(buf);
       gl.deleteProgram(prog);
@@ -283,7 +315,7 @@ export default function HeroCutoutVideo({
       <video
         ref={videoRef}
         autoPlay={autoPlay}
-        muted
+        muted={isMuted}
         playsInline
         preload="auto"
         onClick={webglReady ? undefined : onClick}

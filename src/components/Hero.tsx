@@ -29,7 +29,6 @@ export default function Hero({
 }) {
   const ref = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLVideoElement>(null);
   const fine = useFinePointer();
   const reduced = useReducedMotionPref();
   const isDesktop = useDesktop();
@@ -58,7 +57,6 @@ export default function Hero({
   // Single-run initial playback on mount (plays once, no endless loop)
   useEffect(() => {
     const v = videoRef.current;
-    const a = audioRef.current;
     if (!v || reduced || hasAutoStartedRef.current) return;
     hasAutoStartedRef.current = true;
 
@@ -76,22 +74,20 @@ export default function Hero({
         setHasEnded(false);
       }
 
-      if (!a || pauseAudio || !userWantsSound) {
-        a?.pause();
+      if (pauseAudio || !userWantsSound) {
+        v.muted = true;
         if (!cancelled) setIsMuted(true);
         return;
       }
 
-      a.muted = false;
-      a.volume = 1;
-      a.currentTime = v.currentTime || 0;
+      v.muted = false;
+      v.volume = 1;
       try {
-        await a.play();
+        await v.play();
         if (!cancelled) setIsMuted(false);
       } catch {
-        // Browser blocked unmuted autoplay (e.g. reload without gesture) — keep visual playing and show Tap for Voice
-        a.muted = true;
-        a.pause();
+        // Browser blocked unmuted autoplay — keep visual playing and show Tap for Voice
+        v.muted = true;
         if (!cancelled) setIsMuted(true);
       }
     };
@@ -99,10 +95,12 @@ export default function Hero({
     void startOnce();
     return () => {
       cancelled = true;
+      const v = videoRef.current;
+      if (v && !v.paused) v.pause();
     };
   }, [pauseAudio, reduced, userWantsSound]);
 
-  // Stop both video & voice immediately when user scrolls below Hero section
+  // Stop video & voice immediately when user scrolls below Hero section
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -111,9 +109,7 @@ export default function Hero({
       ([entry]) => {
         if (!entry.isIntersecting) {
           const v = videoRef.current;
-          const a = audioRef.current;
           if (v && !v.paused) v.pause();
-          if (a && !a.paused) a.pause();
           setIsPaused(true);
         }
       },
@@ -128,35 +124,19 @@ export default function Hero({
   useEffect(() => {
     if (!pauseAudio) return;
     const v = videoRef.current;
-    const a = audioRef.current;
-    if (v && !v.paused) v.pause();
-    if (a) {
-      a.muted = true;
-      a.pause();
+    if (v) {
+      if (!v.paused) v.pause();
+      v.muted = true;
     }
     setIsPaused(true);
     setIsMuted(true);
   }, [pauseAudio]);
 
-  const syncAudioTime = useCallback(() => {
-    const v = videoRef.current;
-    const a = audioRef.current;
-    if (!v || !a || a.muted || a.paused) return;
-    if (Math.abs(a.currentTime - v.currentTime) > 0.18) {
-      a.currentTime = v.currentTime;
-    }
-  }, []);
-
   const handleEnded = useCallback(() => {
     const v = videoRef.current;
-    const a = audioRef.current;
     if (v) {
       v.pause();
       v.currentTime = 0.04;
-    }
-    if (a) {
-      a.pause();
-      a.currentTime = 0;
     }
     setHasEnded(true);
     setIsPaused(true);
@@ -164,37 +144,31 @@ export default function Hero({
 
   const replayFromStart = useCallback(async (withSound: boolean) => {
     const v = videoRef.current;
-    const a = audioRef.current;
     if (!v) return;
 
     setHasEnded(false);
     v.currentTime = 0;
+    v.muted = !withSound || pauseAudio;
+    v.volume = 1;
     try {
       await v.play();
       setIsPaused(false);
+      setIsMuted(v.muted);
     } catch {
-      return;
-    }
-
-    if (a && withSound && !pauseAudio) {
-      a.currentTime = 0;
-      a.muted = false;
-      a.volume = 1;
+      v.muted = true;
       try {
-        await a.play();
-        setIsMuted(false);
-      } catch {
-        a.muted = true;
-        a.pause();
+        await v.play();
+        setIsPaused(false);
         setIsMuted(true);
+      } catch {
+        // blocked
       }
     }
   }, [pauseAudio]);
 
   const toggleVoice = useCallback(async () => {
     const v = videoRef.current;
-    const a = audioRef.current;
-    if (!v || !a) return;
+    if (!v) return;
 
     if (hasEnded || v.ended) {
       setUserWantsSound(true);
@@ -202,11 +176,10 @@ export default function Hero({
       return;
     }
 
-    if (isMuted || a.muted || a.paused) {
+    if (isMuted || v.muted) {
       setUserWantsSound(true);
-      a.muted = false;
-      a.volume = 1;
-      a.currentTime = v.currentTime || 0;
+      v.muted = false;
+      v.volume = 1;
       if (v.paused) {
         try {
           await v.play();
@@ -215,58 +188,36 @@ export default function Hero({
           // ignore
         }
       }
-      try {
-        await a.play();
-        setIsMuted(false);
-      } catch {
-        a.muted = true;
-        setIsMuted(true);
-      }
+      setIsMuted(false);
     } else {
       setUserWantsSound(false);
-      a.muted = true;
-      a.pause();
+      v.muted = true;
       setIsMuted(true);
     }
   }, [hasEnded, isMuted, replayFromStart]);
 
   const togglePlayPause = useCallback(async () => {
     const v = videoRef.current;
-    const a = audioRef.current;
     if (!v) return;
 
     if (hasEnded || v.ended) {
       setUserWantsSound(true);
-      await replayFromStart(true);
+      await replayFromStart(!isMuted);
       return;
     }
 
     if (v.paused) {
-      setUserWantsSound(true);
       try {
         await v.play();
         setIsPaused(false);
-        if (a && !pauseAudio) {
-          a.currentTime = v.currentTime || 0;
-          a.muted = false;
-          a.volume = 1;
-          try {
-            await a.play();
-            setIsMuted(false);
-          } catch {
-            a.muted = true;
-            setIsMuted(true);
-          }
-        }
       } catch {
         // ignore
       }
     } else {
       v.pause();
-      a?.pause();
       setIsPaused(true);
     }
-  }, [hasEnded, pauseAudio, replayFromStart]);
+  }, [hasEnded, isMuted, replayFromStart]);
 
   const handleVideoClick = useCallback(async () => {
     await togglePlayPause();
@@ -427,21 +378,12 @@ export default function Hero({
                 primarySrc={profile.bannerVideo}
                 fallbackSrc={profile.bannerVideoFallback}
                 autoPlay={!reduced}
+                isMuted={isMuted}
                 onClick={handleVideoClick}
-                onTimeUpdate={syncAudioTime}
                 onEnded={handleEnded}
                 cursor={isPaused || hasEnded ? 'play' : undefined}
                 title={isPaused || hasEnded ? 'Click to play intro' : 'Click to pause'}
                 ariaLabel="Benita Samson founder introduction video"
-              />
-              {/* Synced voice audio track from original MP4 (WebM BG-removed export has silent Opus track) */}
-              <video
-                ref={audioRef}
-                src={profile.bannerAudio}
-                playsInline
-                preload="auto"
-                aria-hidden
-                className="hidden"
               />
             </div>
 
