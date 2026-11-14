@@ -52,7 +52,7 @@ export default function Achievements() {
 
   return (
     <div ref={wrapRef}>
-      <SectionHeading kicker="Ecosystem & People" title="Impact & Ventures" />
+      <SectionHeading kicker="Ecosystem & People" title="Impact & Milestones" />
 
       <div className="gutter grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 [perspective:1400px]">
         {achievements.map((a) => (

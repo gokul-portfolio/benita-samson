@@ -371,7 +371,7 @@ export const achievements: Achievement[] = [
     id: 'hope-franchise',
     title: 'Hope Franchise',
     org: 'Madurai · Feb 2025',
-    detail: 'Sold home and cars in Australia and brought Hope Education & Migration to Madurai, mastering the Indian admission ecosystem with a team of four.',
+    detail: ' brought Hope Education & Migration to Madurai, mastering the Indian admission ecosystem with a team of four.',
     laurel: 'First Venture',
   },
   {
