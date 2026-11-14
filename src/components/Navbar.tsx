@@ -138,17 +138,19 @@ export default function Navbar({ order, onEnquire }: NavbarProps) {
         <button
           type="button"
           onClick={() => go('top')}
-          aria-label="Career HQ — Back to top"
+          aria-label="Career with Beni — Back to top"
           className="group flex shrink-0 items-center rounded-sm text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson/70"
         >
           <img
-            src="/assets/careerhq-logo.png"
-            alt="Career HQ — Career with Beni"
-            width={998}
-            height={276}
+            src="/assets/career-with-beni-3.png"
+            alt="Career with Beni"
+            width={809}
+            height={148}
             decoding="async"
-            className={`w-auto select-none object-contain transition-all duration-300 group-hover:opacity-85 ${
-              scrolled || mobileNav ? 'h-7' : 'h-9 sm:h-10'
+            className={`w-auto select-none object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] transition-all duration-300 group-hover:opacity-95 group-hover:scale-[1.02] ${
+              scrolled || mobileNav
+                ? 'h-8 sm:h-9 md:h-[38px]'
+                : 'h-10 sm:h-11 md:h-[48px] lg:h-[50px]'
             }`}
           />
         </button>
