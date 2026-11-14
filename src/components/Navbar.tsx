@@ -144,7 +144,7 @@ export default function Navbar({ order, onEnquire }: NavbarProps) {
           <img
             src="/assets/career-with-beni-3.png"
             alt="Career with Beni"
-            width={809}
+            width={834}
             height={148}
             decoding="async"
             className={`w-auto select-none object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] transition-all duration-300 group-hover:opacity-95 group-hover:scale-[1.02] ${

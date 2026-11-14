@@ -147,17 +147,6 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
       </div>
 
       <footer className="absolute inset-x-0 bottom-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center">
-        <div className="mb-2 text-base">
-          <img
-            src="/assets/careerhq-logo.png"
-            alt="Career HQ — Career with Beni"
-            width={998}
-            height={276}
-            loading="lazy"
-            decoding="async"
-            className="h-7 w-auto object-contain opacity-90"
-          />
-        </div>
         <p className="text-[11px] leading-relaxed text-smoke">
           © {new Date().getFullYear()} {profile.displayName} · Connecting Dots Worldwide · Career HQ ({profile.links.portfolio.replace('https://', '')})
         </p>
