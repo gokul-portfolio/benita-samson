@@ -150,7 +150,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
         <div className="mb-2 text-base">
           <img
             src="/assets/careerhq-logo.png"
-            alt="Career HQ — Connecting Dots Worldwide"
+            alt="Career HQ — Career with Beni"
             width={998}
             height={276}
             loading="lazy"

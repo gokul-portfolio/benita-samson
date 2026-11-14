@@ -143,7 +143,7 @@ export default function Navbar({ order, onEnquire }: NavbarProps) {
         >
           <img
             src="/assets/careerhq-logo.png"
-            alt="Career HQ — Connecting Dots Worldwide"
+            alt="Career HQ — Career with Beni"
             width={998}
             height={276}
             decoding="async"
