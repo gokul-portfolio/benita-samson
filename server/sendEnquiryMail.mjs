@@ -85,9 +85,11 @@ export async function sendEnquiryMail(payload) {
     </div>
   `;
 
+  const toEmail = process.env.ENQUIRY_TO_EMAIL || 'benitasamson@gmail.com';
+
   await transporter.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
-    to: user,
+    to: toEmail,
     replyTo: `"${name}" <${email}>`,
     subject,
     text,
